@@ -124,7 +124,7 @@
             box-shadow: 0 0 4px rgba(0,0,0,0.5);
         }
 
-        /* CUERPO PRINCIPAL SCRAPING / PANTALLAS */
+        /* CUERPO PRINCIPAL / PANTALLAS */
         .app-body {
             flex: 1;
             overflow-y: auto;
@@ -325,6 +325,31 @@
             gap: 6px;
         }
 
+        .btn-backup {
+            background: rgba(224, 169, 109, 0.12);
+            color: var(--accent-gold);
+            border: 1px solid var(--card-border);
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .btn-backup:hover {
+            background: rgba(224, 169, 109, 0.25);
+        }
+
+        .backup-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
         /* TARJETAS DE ARCHIVO */
         .card {
             background: var(--card-glass);
@@ -490,6 +515,15 @@
                     <button class="btn-back" onclick="showScreen('screen-pin')">🔒 Salir</button>
                 </div>
                 
+                <!-- BARRA DE COPIAS DE SEGURIDAD -->
+                <div class="backup-bar">
+                    <button class="btn-backup" onclick="exportBackup()">📥 Copia de Seguridad</button>
+                    <label class="btn-backup">
+                        📤 Restaurar Copia
+                        <input type="file" id="import-input" accept=".json" style="display:none;" onchange="importBackup(event)">
+                    </label>
+                </div>
+
                 <input type="text" id="search-bar" placeholder="🔍 Buscar por nombre, DNI, matrícula..." oninput="filterNotes()" style="margin-bottom: 15px;">
                 
                 <div id="notes-list"></div>
@@ -556,9 +590,9 @@
                         <div class="label">📷 Fotografía</div>
                         <div class="photo-input-container">
                             <label for="photo-input" class="custom-file-upload">
-                                📷 Tomar / Adjuntar Foto
+                                📷 Elegir de Galería / Tomar Foto
                             </label>
-                            <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none;" onchange="previewPhoto(event)">
+                            <input type="file" id="photo-input" accept="image/*" style="display:none;" onchange="previewPhoto(event)">
                             
                             <div id="photo-wrapper" class="photo-preview-wrapper">
                                 <img id="photo-preview" src="#" alt="Vista previa">
@@ -614,7 +648,6 @@
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             
-            // Gestionar visibilidad del Bottom Nav
             const nav = document.getElementById('bottom-nav');
             if (id === 'screen-pin') {
                 nav.style.display = 'none';
@@ -716,7 +749,7 @@
             try {
                 localStorage.setItem('id_notes', JSON.stringify(notes));
             } catch (e) {
-                alert("La memoria está llena. Guarde sin foto o borre notas.");
+                alert("La memoria del navegador está llena. Guarde sin foto o borre notas antiguas.");
                 return;
             }
 
@@ -817,6 +850,47 @@
                 (n.lugar && n.lugar.toLowerCase().includes(query))
             );
             renderNotes(filtered);
+        }
+
+        /* FUNCIONES DE COPIA DE SEGURIDAD */
+        function exportBackup() {
+            if (notes.length === 0) {
+                alert("No hay registros guardados para exportar.");
+                return;
+            }
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(notes));
+            const downloadAnchor = document.createElement('a');
+            const dateStr = new Date().toISOString().slice(0, 10);
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `copia_filiame_${dateStr}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedNotes = JSON.parse(e.target.result);
+                    if (Array.isArray(importedNotes)) {
+                        if (confirm(`Se han encontrado ${importedNotes.length} registros. ¿Deseas reemplazar las notas actuales por las de la copia?`)) {
+                            notes = importedNotes;
+                            localStorage.setItem('id_notes', JSON.stringify(notes));
+                            renderNotes(notes);
+                            alert("✅ Copia de seguridad restaurada correctamente.");
+                        }
+                    } else {
+                        alert("El archivo seleccionado no tiene un formato válido de FILIAME.");
+                    }
+                } catch (err) {
+                    alert("Error al leer el archivo de copia de seguridad.");
+                }
+            };
+            reader.readAsText(file);
         }
     </script>
 </body>
