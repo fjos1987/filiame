@@ -85,7 +85,7 @@
             box-shadow: 0 0 4px rgba(0,0,0,0.5);
         }
 
-        .app-body { flex: 1; overflow-y: auto; padding: 10px 20px 80px 20px; scroll-behavior: smooth; }
+        .app-body { flex: 1; overflow-y: auto; padding: 10px 20px 80px 20px; scroll-behavior: smooth; position: relative; }
 
         .screen { display: none; animation: fadeIn 0.3s ease-out; }
         .screen.active { display: block; }
@@ -113,7 +113,7 @@
         .bottom-nav {
             position: absolute; bottom: 0; left: 0; right: 0; height: 65px; background: rgba(10, 15, 28, 0.9);
             backdrop-filter: blur(20px); border-top: 1px solid var(--border-subtle); display: flex;
-            justify-around; align-items: center; padding: 0 10px; z-index: 100;
+            justify-content: space-around; align-items: center; padding: 0 10px; z-index: 100;
         }
         .nav-item {
             display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 0.75rem;
@@ -121,6 +121,33 @@
         }
         .nav-item.active, .nav-item:hover { color: var(--accent-gold); }
         .nav-item svg { width: 22px; height: 22px; fill: currentColor; }
+
+        /* MENU INICIO ESTILO NATIVO */
+        .home-menu-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+        .home-card-btn {
+            background: var(--card-glass); border: 1px solid var(--card-border); border-radius: var(--radius-large);
+            padding: 16px; display: flex; align-items: center; gap: 14px; text-align: left; cursor: pointer;
+            transition: all 0.2s ease; width: 100%; color: var(--text-white);
+        }
+        .home-card-btn:hover { border-color: var(--card-border-glow); background: rgba(30, 42, 70, 0.8); }
+        .home-card-icon {
+            background: rgba(224, 169, 109, 0.15); border: 1px solid var(--card-border); border-radius: 14px;
+            width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; color: var(--accent-gold); flex-shrink: 0;
+        }
+        .home-card-icon svg { width: 24px; height: 24px; fill: currentColor; }
+        .home-card-info h3 { margin: 0; font-size: 0.98rem; font-weight: 700; color: #fff; }
+        .home-card-info p { margin: 3px 0 0 0; font-size: 0.78rem; color: var(--text-muted); }
+
+        /* BOTÓN DE BORRAR TODO CENTRADO, MÁS ABAJO Y A LA MITAD DE TAMAÑO */
+        .btn-delete-all-wrapper {
+            display: flex; justify-content: center; margin-top: 40px; margin-bottom: 20px;
+        }
+        .btn-delete-all {
+            background: rgba(255, 82, 82, 0.12); color: var(--danger-red); border: 1px solid rgba(255, 82, 82, 0.3);
+            padding: 5px 10px; border-radius: 8px; font-weight: 700; font-size: 0.68rem;
+            cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;
+        }
+        .btn-delete-all:hover { background: var(--danger-red); color: #fff; }
 
         /* FORMULARIOS */
         .form-section { background: var(--card-glass); border: 1px solid var(--border-subtle); border-radius: var(--radius-large); padding: 18px; margin-bottom: 15px; }
@@ -185,14 +212,6 @@
             padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; cursor: pointer; font-weight: 600;
         }
 
-        .btn-backup {
-            background: rgba(224, 169, 109, 0.12); color: var(--accent-gold); border: 1px solid var(--card-border);
-            padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 0.75rem; font-weight: 600; flex: 1; text-align: center;
-            transition: all 0.2s ease;
-        }
-
-        .backup-bar { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
-
         /* TARJETAS DE REGISTRO Y AVISOS */
         .card {
             background: var(--card-glass); border: 1px solid var(--border-subtle); border-radius: var(--radius-medium);
@@ -236,7 +255,7 @@
         .gallery-item img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
         .gallery-actions {
             position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.8); display: flex;
-            justify-around; padding: 4px 0; backdrop-filter: blur(4px);
+            justify-content: space-around; padding: 4px 0; backdrop-filter: blur(4px);
         }
         .gallery-btn { background: none; border: none; color: #fff; font-size: 0.75rem; cursor: pointer; padding: 2px 4px; }
 
@@ -247,7 +266,7 @@
         .detail-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 10px; }
         .detail-gallery img { width: 100%; height: 110px; object-fit: cover; border-radius: var(--radius-medium); border: 1px solid var(--card-border); cursor: pointer; }
 
-        .header-title { display: flex; align-items: center; justify-between; margin-bottom: 15px; }
+        .header-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
         .section-header-title { display: flex; align-items: center; gap: 10px; }
         .folder-icon-badge {
             display: flex; align-items: center; justify-content: center; background: rgba(224, 169, 109, 0.15);
@@ -313,7 +332,63 @@
                 </div>
             </div>
 
-            <!-- 2. ARCHIVO / LISTA REGISTROS -->
+            <!-- 2. PANTALLA DE INICIO (HOME) DESPUÉS DE LA CONTRASEÑA -->
+            <div id="screen-home" class="screen">
+                <div class="header-title">
+                    <div class="section-header-title">
+                        <div class="folder-icon-badge">
+                            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                        </div>
+                        <h2 class="section-title-text">Inicio</h2>
+                    </div>
+                    <button class="btn-back" onclick="logoutApp()">🔒 Salir</button>
+                </div>
+
+                <div class="home-menu-grid">
+                    <!-- Hacer copia de seguridad -->
+                    <div class="home-card-btn" onclick="exportBackup()">
+                        <div class="home-card-icon">
+                            <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        </div>
+                        <div class="home-card-info">
+                            <h3>Hacer copia de seguridad</h3>
+                            <p>Descarga una copia local de tus datos</p>
+                        </div>
+                    </div>
+
+                    <!-- Restaurar copia -->
+                    <label class="home-card-btn" style="margin-bottom:0;">
+                        <div class="home-card-icon">
+                            <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+                        </div>
+                        <div class="home-card-info">
+                            <h3>Restaurar copia</h3>
+                            <p>Importa registros previamente guardados</p>
+                        </div>
+                        <input type="file" id="import-input" accept=".json,application/json,text/plain" style="display:none;" onchange="importBackup(event)">
+                    </label>
+
+                    <!-- Sincronización Android -->
+                    <div class="home-card-btn" id="btn-folder" onclick="toggleSyncState()">
+                        <div class="home-card-icon">
+                            <svg viewBox="0 0 24 24"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
+                        </div>
+                        <div class="home-card-info">
+                            <h3 id="sync-title">Sincronización Android</h3>
+                            <p id="sync-desc">Vincular carpeta interna de almacenamiento</p>
+                        </div>
+                    </div>
+
+                    <!-- Botón de Borrar Todo Centrado, Reducido y más Abajo -->
+                    <div class="btn-delete-all-wrapper">
+                        <button class="btn-delete-all" onclick="openDeleteAllModal()">
+                            ⚠️ BORRAR TODO
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. ARCHIVO / LISTA REGISTROS -->
             <div id="screen-archive" class="screen">
                 <div class="header-title">
                     <div class="section-header-title">
@@ -322,23 +397,14 @@
                         </div>
                         <h2 class="section-title-text">Identificaciones</h2>
                     </div>
-                    <button class="btn-back" onclick="showScreen('screen-pin')">🔒 Salir</button>
-                </div>
-                
-                <div class="backup-bar">
-                    <button class="btn-backup" id="btn-folder" onclick="toggleSyncState()">📁 Vincular Carpeta</button>
-                    <button class="btn-backup" onclick="exportBackup()">📥 Descargar Copia</button>
-                    <label class="btn-backup">
-                        📤 Restaurar
-                        <input type="file" id="import-input" accept=".json,application/json,text/plain" style="display:none;" onchange="importBackup(event)">
-                    </label>
+                    <button class="btn-inline" style="padding: 8px 12px;" onclick="openNewNote()">➕ Añadir</button>
                 </div>
 
                 <input type="text" id="search-bar" placeholder="🔍 Buscar nombre, DNI, matrícula..." oninput="filterNotes()" style="margin-bottom: 15px;">
                 <div id="notes-list"></div>
             </div>
 
-            <!-- 3. PANTALLA AVISOS TELEFÓNICOS -->
+            <!-- 4. PANTALLA AVISOS TELEFÓNICOS -->
             <div id="screen-avisos" class="screen">
                 <div class="header-title">
                     <div class="section-header-title">
@@ -353,7 +419,7 @@
                 <div id="avisos-list"></div>
             </div>
 
-            <!-- 4. FORMULARIO REGISTRO -->
+            <!-- 5. FORMULARIO REGISTRO -->
             <div id="screen-form" class="screen">
                 <div class="header-title">
                     <button class="btn-back" onclick="showScreen('screen-archive')">← Volver</button>
@@ -457,7 +523,7 @@
                 </form>
             </div>
 
-            <!-- 5. DETALLE DE LA NOTA -->
+            <!-- 6. DETALLE DE LA NOTA -->
             <div id="screen-detail" class="screen">
                 <div class="header-title">
                     <button class="btn-back" onclick="showScreen('screen-archive')">← Volver</button>
@@ -477,17 +543,17 @@
 
         <!-- NAV INFERIOR -->
         <div id="bottom-nav" class="bottom-nav" style="display: none;">
-            <button id="nav-registros" class="nav-item active" onclick="showScreen('screen-archive')">
+            <button id="nav-home" class="nav-item" onclick="showScreen('screen-home')">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span>Inicio</span>
+            </button>
+            <button id="nav-registros" class="nav-item" onclick="showScreen('screen-archive')">
                 <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 7h10v2H7zm0 4h10v2H7zm0 4h7v2H7z"/></svg>
                 <span>Registros</span>
             </button>
             <button id="nav-avisos" class="nav-item" onclick="showScreen('screen-avisos')">
                 <svg viewBox="0 0 24 24"><path d="M20 15.5c-1.25 0-2.45-.2-3.57-.57-.35-.11-.74-.03-1.02.24l-2.2 2.2c-2.83-1.44-5.15-3.75-6.59-6.59l2.2-2.21c.28-.26.36-.65.25-1C8.7 6.45 8.5 5.25 8.5 4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.5c0-.55-.45-1-1-1zM12 3v10l3-3h5V3h-8z"/></svg>
                 <span>Avisos</span>
-            </button>
-            <button id="nav-add" class="nav-item" onclick="openNewNote()">
-                <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                <span>Añadir</span>
             </button>
         </div>
 
@@ -520,6 +586,20 @@
         </div>
     </div>
 
+    <!-- MODAL DOBLE CONFIRMACIÓN BORRAR TODO -->
+    <div id="modal-delete-all" class="modal-overlay">
+        <div class="modal-content">
+            <button class="lightbox-close" onclick="closeDeleteAllModal()">✕</button>
+            <h3 style="margin-top:0; color:var(--danger-red); font-size:1.1rem; text-transform:uppercase;">⚠️ Borrado Absoluto</h3>
+            <p style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.4;">Esta acción eliminará de forma permanente <strong>todos los registros de identificaciones y todos los avisos</strong> guardados en la aplicación.</p>
+            
+            <div class="label" style="color:var(--danger-red);">Escribe "BORRAR" para confirmar</div>
+            <input type="text" id="delete-all-confirm-input" placeholder="BORRAR" style="text-align:center; font-weight:bold; letter-spacing:2px; border-color:var(--danger-red);" oninput="validateDeleteAllInput()">
+
+            <button id="btn-confirm-delete-all" class="btn-danger" style="opacity:0.5; cursor:not-allowed;" disabled onclick="executeDeleteAll()">⚠️ Confirmar y Eliminar Todo</button>
+        </div>
+    </div>
+
     <!-- MODAL LIGHTBOX FOTOS -->
     <div id="lightbox" class="modal-overlay" onclick="closeLightbox()">
         <button class="lightbox-close" onclick="closeLightbox()">✕</button>
@@ -533,7 +613,7 @@
         let currentPhotos = [];
         let currentNoteId = null;
         let directoryHandle = null;
-        let isSyncActive = false; // Control de estado de la sincronización
+        let isSyncActive = false;
 
         /* MOTOR COMPLETO DE INDEXEDDB PARA ALMACENAMIENTO CONTINUO */
         function openDB() {
@@ -649,39 +729,31 @@
             }
 
             if (!directoryHandle) {
-                // Caso 1: Nunca se ha vinculado -> Vincular por primera vez
                 await setupLocalFolder();
             } else if (isSyncActive) {
-                // Caso 2: Está activo -> Pausar / Desincronizar
                 isSyncActive = false;
                 updateFolderButtonState('paused');
             } else {
-                // Caso 3: Estaba pausado -> Volver a sincronizar
                 isSyncActive = true;
                 updateFolderButtonState('active');
-                await saveToLocalFolder(); // Guarda los cambios pendientes al reactivar
+                await saveToLocalFolder();
             }
         }
 
         function updateFolderButtonState(state) {
-            const btn = document.getElementById('btn-folder');
-            if (!btn) return;
+            const title = document.getElementById('sync-title');
+            const desc = document.getElementById('sync-desc');
+            if (!title || !desc) return;
 
             if (state === 'active') {
-                btn.style.background = 'rgba(46, 204, 113, 0.2)';
-                btn.style.borderColor = '#2ecc71';
-                btn.style.color = '#2ecc71';
-                btn.innerText = '✅ Sincronizado';
+                title.innerText = '✅ Sincronización Activa';
+                desc.innerText = `Carpeta: "${directoryHandle ? directoryHandle.name : 'Vinculada'}"`;
             } else if (state === 'paused') {
-                btn.style.background = 'rgba(255, 152, 0, 0.18)';
-                btn.style.borderColor = '#ff9800';
-                btn.style.color = '#ffb74d';
-                btn.innerText = '⏸️ Desincronizado';
+                title.innerText = '⏸️ Sincronización Pausada';
+                desc.innerText = 'Haz clic para reactivar la sincronización';
             } else {
-                btn.style.background = 'rgba(224, 169, 109, 0.12)';
-                btn.style.borderColor = 'var(--card-border)';
-                btn.style.color = 'var(--accent-gold)';
-                btn.innerText = '📁 Vincular Carpeta';
+                title.innerText = 'Sincronización Android';
+                desc.innerText = 'Vincular carpeta interna de almacenamiento';
             }
         }
 
@@ -740,14 +812,14 @@
             }
 
             document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
-            if (id === 'screen-archive') {
+            if (id === 'screen-home') {
+                document.getElementById('nav-home').classList.add('active');
+            } else if (id === 'screen-archive') {
                 document.getElementById('nav-registros').classList.add('active');
                 renderNotes(notes);
             } else if (id === 'screen-avisos') {
                 document.getElementById('nav-avisos').classList.add('active');
                 renderAvisos();
-            } else if (id === 'screen-form') {
-                document.getElementById('nav-add').classList.add('active');
             }
         }
 
@@ -755,10 +827,51 @@
             const input = document.getElementById('pin-input').value;
             if (input === PIN_CORRECTO) {
                 document.getElementById('pin-input').value = '';
-                showScreen('screen-archive');
+                showScreen('screen-home');
             } else {
                 alert("PIN Incorrecto");
             }
+        }
+
+        function logoutApp() {
+            showScreen('screen-pin');
+        }
+
+        /* BORRADO ABSOLUTO CON CONFIRMACIÓN */
+        function openDeleteAllModal() {
+            document.getElementById('delete-all-confirm-input').value = '';
+            validateDeleteAllInput();
+            document.getElementById('modal-delete-all').classList.add('active');
+        }
+
+        function closeDeleteAllModal() {
+            document.getElementById('modal-delete-all').classList.remove('active');
+        }
+
+        function validateDeleteAllInput() {
+            const val = document.getElementById('delete-all-confirm-input').value.trim();
+            const btn = document.getElementById('btn-confirm-delete-all');
+            if (val === 'BORRAR') {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            } else {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            }
+        }
+
+        async function executeDeleteAll() {
+            notes = [];
+            avisos = [];
+            await saveIDBData('id_notes', notes);
+            await saveIDBData('id_avisos', avisos);
+            await saveToLocalFolder();
+
+            closeDeleteAllModal();
+            alert("✅ Se han borrado todos los datos de la aplicación.");
+            showScreen('screen-home');
         }
 
         /* AVISOS Y LLAMADAS */
@@ -875,7 +988,7 @@
             }
         }
 
-        /* FOTOS Y COMPRESIÓN */
+        /* COMPRESIÓN Y GESTIÓN AVANZADA DE FOTOGRAFÍAS */
         function handleMultiplePhotos(event) {
             const files = Array.from(event.target.files);
             if (!files.length) return;
@@ -894,7 +1007,7 @@
                 };
                 reader.readAsDataURL(file);
             });
-            event.target.value = "";
+            event.target.value = ""; 
         }
 
         function compressImage(base64Str, maxWidth, quality, callback) {
@@ -941,27 +1054,29 @@
             renderGallery();
         }
 
+        /* LIGHTBOX VISOR */
         function openLightbox(src) {
             document.getElementById('lightbox-img').src = src;
             document.getElementById('lightbox').classList.add('active');
         }
 
         function closeLightbox() {
-            document.getElementById('lightbox-img').src = '';
             document.getElementById('lightbox').classList.remove('active');
         }
 
-        /* MOTOR OPTIMIZADO OCR */
+        /* LÓGICA OCR OPTIMIZADA PARA DNI Y FECHAS DE NACIMIENTO */
         async function scanTextFromImageIndex(index) {
-            const rawImage = currentPhotos[index];
-            if (!rawImage) return;
+            const imageToScan = currentPhotos[index];
+            if (!imageToScan) return;
 
             const loading = document.getElementById('ocr-loading');
             loading.style.display = 'block';
+            loading.innerText = '⏳ Escaneando DNI / Documento con alta precisión...';
 
             try {
-                const worker = await Tesseract.createWorker(['spa', 'eng']);
-                const ret = await worker.recognize(rawImage);
+                const worker = await Tesseract.createWorker('spa');
+
+                const ret = await worker.recognize(imageToScan);
                 await worker.terminate();
 
                 const rawText = ret.data.text;
@@ -969,84 +1084,129 @@
 
                 let detectedData = [];
 
-                // 1. DNI/NIE
-                const dniMatch = rawText.match(/DNI\s*([0-9]{8}[A-Z])/i) || 
-                                 rawText.match(/\b([0-9]{8}[A-Z])\b/i) || 
-                                 rawText.match(/\b([XYZ][0-9]{7}[A-Z])\b/i);
+                // 1. EXTRAER DNI / NIE
+                const dniMatch = rawText.match(/[0-9]{8}[A-Z]/i) || rawText.match(/[XYZ][0-9]{7}[A-Z]/i);
                 if (dniMatch) {
-                    const docVal = dniMatch[1] ? dniMatch[1] : dniMatch[0];
-                    document.getElementById('documento').value = docVal.toUpperCase().replace(/\s+/g, '');
-                    detectedData.push("Nº Documento");
+                    document.getElementById('documento').value = dniMatch[0].toUpperCase();
+                    detectedData.push("DNI/NIE");
                 }
 
-                // 2. FECHA NACIMIENTO
-                const dateMatch = rawText.match(/\b(0[1-9]|[12][0-9]|3[01])[\s\/\.-]+(0[1-9]|1[02])[\s\/\.-]+(19[0-9]{2}|20[0-9]{2})\b/);
-                if (dateMatch) {
-                    document.getElementById('fecha_nac').value = `${dateMatch[1]}/${dateMatch[2]}/${dateMatch[3]}`;
-                    detectedData.push("Fecha Nacimiento");
-                }
-
-                // 3. MATRÍCULA
-                const matMatch = rawText.match(/\b[0-9]{4}[\s\-]?[B-DF-HJ-NP-TV-Z]{3}\b/i) || 
-                                 rawText.match(/\b[A-Z]{1,2}[\s\-]?[0-9]{4}[\s\-]?[A-Z]{1,2}\b/i);
+                // 2. EXTRAER MATRÍCULA
+                const matMatch = rawText.match(/[0-9]{4}\s?[B-DF-HJ-NP-TV-Z]{3}/i);
                 if (matMatch) {
-                    document.getElementById('matricula').value = matMatch[0].replace(/[\s\-]/g, '').toUpperCase();
+                    document.getElementById('matricula').value = matMatch[0].replace(/\s+/g, '').toUpperCase();
                     detectedData.push("Matrícula");
                 }
 
-                // 4. APELLIDOS Y NOMBRE
-                const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-                let apellidos = "";
-                let nombre = "";
-
-                for (let i = 0; i < lines.length; i++) {
-                    const lUpper = lines[i].toUpperCase();
-                    if (lUpper.includes("APELLIDOS") || lUpper.includes("COGNOMS")) {
-                        let j = i + 1;
-                        let foundList = [];
-                        while (j < lines.length && j <= i + 2) {
-                            const candidate = lines[j].replace(/[^A-ZÁÉÍÓÚÑ\s]/gi, '').trim();
-                            if (candidate.length > 1 && !candidate.toUpperCase().includes("NOMBRE") && !candidate.toUpperCase().includes("NOM")) {
-                                foundList.push(candidate);
-                            }
-                            j++;
-                        }
-                        if (foundList.length > 0) apellidos = foundList.join(" ");
-                    }
-
-                    if (lUpper.includes("NOMBRE") || lUpper.includes("NOM")) {
-                        let j = i + 1;
-                        while (j < lines.length && j <= i + 2) {
-                            const candidate = lines[j].replace(/[^A-ZÁÉÍÓÚÑ\s]/gi, '').trim();
-                            if (candidate.length > 1 && !candidate.toUpperCase().includes("SEXO") && !candidate.toUpperCase().includes("NACIONALIDAD")) {
-                                nombre = candidate;
-                                break;
-                            }
-                            j++;
-                        }
-                    }
+                // 3. EXTRAER NOMBRE Y APELLIDOS
+                const extractedName = parseNameAdvanced(rawText);
+                if (extractedName) {
+                    document.getElementById('nombre').value = extractedName;
+                    detectedData.push("Nombre");
                 }
 
-                if (apellidos || nombre) {
-                    const full = `${apellidos} ${nombre}`.trim();
-                    if (full.length > 2) {
-                        document.getElementById('nombre').value = full;
-                        detectedData.push("Nombre y Apellidos");
-                    }
+                // 4. EXTRAER FECHA DE NACIMIENTO
+                const dobMatch = parseDOBAdvanced(rawText);
+                if (dobMatch) {
+                    document.getElementById('fecha_nac').value = dobMatch;
+                    detectedData.push("Fecha Nacimiento");
                 }
 
                 checkReincidencia();
 
                 if (detectedData.length > 0) {
-                    alert(`✅ OCR procesado con éxito.\n\nCampos extraídos: ${detectedData.join(', ')}.`);
+                    alert(`✅ OCR completado. Registrado: ${detectedData.join(', ')}.`);
                 } else {
-                    alert("ℹ️ No se extrajeron campos automáticos. Verifica que la imagen esté enfocada.");
+                    alert("ℹ️ No se detectaron campos con suficiente claridad. Intenta encuadrar mejor la imagen.");
                 }
 
             } catch (err) {
                 loading.style.display = 'none';
-                alert("Error al procesar el texto del documento.");
+                alert("Error al procesar la imagen con el escáner OCR.");
             }
+        }
+
+        function parseNameAdvanced(text) {
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            let apellidos = [];
+            let nombre = "";
+            let capturingApellidos = false;
+            let capturingNombre = false;
+
+            for (let i = 0; i < lines.length; i++) {
+                const lineClean = lines[i].toUpperCase().replace(/[^A-ZÁÉÍÓÚÑ\s]/g, '').trim();
+
+                if (lineClean.includes("APELLIDO") || lineClean.includes("SURNAME")) {
+                    capturingApellidos = true;
+                    capturingNombre = false;
+                    continue;
+                }
+
+                if (lineClean.includes("NOMBRE") || lineClean.includes("GIVEN NAME")) {
+                    capturingApellidos = false;
+                    capturingNombre = true;
+                    continue;
+                }
+
+                if (lineClean.includes("SEXO") || lineClean.includes("SEX") || lineClean.includes("NACIONALIDAD") || lineClean.includes("EMISION")) {
+                    capturingApellidos = false;
+                    capturingNombre = false;
+                }
+
+                if (capturingApellidos && lineClean.length > 1) {
+                    if (!lineClean.includes("REINO") && !lineClean.includes("DOCUMENTO")) {
+                        apellidos.push(lineClean);
+                    }
+                }
+
+                if (capturingNombre && lineClean.length > 1 && !nombre) {
+                    nombre = lineClean;
+                }
+            }
+
+            if (nombre || apellidos.length > 0) {
+                return `${nombre} ${apellidos.join(' ')}`.trim();
+            }
+
+            return null;
+        }
+
+        function parseDOBAdvanced(text) {
+            const cleanText = text.replace(/,/g, '.');
+            const lines = cleanText.split('\n').map(l => l.trim());
+
+            for (let l of lines) {
+                const upperLine = l.toUpperCase();
+                if (upperLine.includes("NAC") || upperLine.includes("BIRTH") || upperLine.includes("FECHA")) {
+                    const match = l.match(/(\d{2}[\/\.-]\d{2}[\/\.-]\d{4})/);
+                    if (match) {
+                        return match[0].replace(/[\.-]/g, '/');
+                    }
+                    const matchShort = l.match(/(\d{2}\s\d{2}\s\d{2,4})/);
+                    if (matchShort) {
+                        const parts = matchShort[0].split(/\s+/);
+                        const year = parts[2].length === 2 ? '19' + parts[2] : parts[2];
+                        return `${parts[0]}/${parts[1]}/${year}`;
+                    }
+                }
+            }
+
+            const globalMatch = cleanText.match(/\b(\d{2})[\/\.-](\d{2})[\/\.-](\d{4})\b/);
+            if (globalMatch) {
+                return `${globalMatch[1]}/${globalMatch[2]}/${globalMatch[3]}`;
+            }
+
+            const altMatch = cleanText.match(/\b(\d{2})\s(\d{2})\s(\d{4}|\d{2})\b/);
+            if (altMatch) {
+                const year = altMatch[3].length === 2 ? '19' + altMatch[3] : altMatch[3];
+                const day = parseInt(altMatch[1], 10);
+                const month = parseInt(altMatch[2], 10);
+                if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+                    return `${altMatch[1]}/${altMatch[2]}/${year}`;
+                }
+            }
+
+            return null;
         }
 
         /* BÚSQUEDA Y REGISTRO */
@@ -1347,7 +1507,7 @@
             window.open(url, '_blank');
         }
 
-        /* GENERACIÓN Y DESCARGA DE PDF COMPACTO */
+        /* GENERACIÓN Y DESCARGA DE PDF */
         function exportPDF() {
             const n = notes.find(item => String(item.id) === String(currentNoteId));
             if (!n) return;
@@ -1361,7 +1521,6 @@
             const margin = 15;
             let y = 15;
 
-            // Header Principal
             doc.setFillColor(15, 23, 42);
             doc.rect(0, 0, 210, 28, 'F');
 
@@ -1380,7 +1539,6 @@
 
             y = 35;
 
-            // Bloque: Datos Generales
             doc.setFillColor(245, 247, 250);
             doc.rect(margin, y, 180, 8, 'F');
             doc.setTextColor(15, 23, 42);
@@ -1407,7 +1565,6 @@
             doc.setFont('helvetica', 'normal');
             doc.text(n.lugar || '-', margin + 25, y);
 
-            // Bloque: Filiación e Identificación
             y += 10;
             doc.setFillColor(245, 247, 250);
             doc.rect(margin, y, 180, 8, 'F');
@@ -1458,7 +1615,6 @@
             doc.setFont('helvetica', 'normal');
             doc.text(`${n.vehiculo || '-'} ${n.matricula ? '[' + n.matricula + ']' : ''}`, margin + 35, y);
 
-            // Bloque: Hechos
             y += 10;
             doc.setFillColor(245, 247, 250);
             doc.rect(margin, y, 180, 8, 'F');
@@ -1475,7 +1631,6 @@
             
             y += (splitHechos.length * 5) + 5;
 
-            // Bloque: Fotografías Adjuntas
             if (n.fotos && n.fotos.length > 0) {
                 if (y > 220) {
                     doc.addPage();
@@ -1513,7 +1668,6 @@
                 });
             }
 
-            // Pie de página
             const pageCount = doc.internal.getNumberOfPages();
             for (let i = 1; i <= pageCount; i++) {
                 doc.setPage(i);
@@ -1522,12 +1676,11 @@
                 doc.text(`Documento de uso confidencial - FILIAME TactiApp Pro - Página ${i} de ${pageCount}`, 105, 290, { align: 'center' });
             }
 
-            // Descarga del documento
             const nombreArchivo = `filiame_${(n.nombre || 'registro').toLowerCase().replace(/\s+/g, '_')}_${n.id}.pdf`;
             doc.save(nombreArchivo);
         }
 
-        /* EXPORTACIÓN / IMPORTACIÓN COMPLETA GARANTIZADA */
+        /* EXPORTACIÓN / IMPORTACIÓN JSON */
         function exportBackup() {
             const backupData = {
                 notes: notes,
@@ -1580,7 +1733,6 @@
                     await saveIDBData('id_avisos', avisos);
                     
                     await saveToLocalFolder();
-                    renderNotes(notes);
                     alert(`✅ Copia cargada con éxito. (${notes.length} identificaciones, ${avisos.length} avisos)`);
                 } catch (err) {
                     alert("⚠️ Error al importar el archivo JSON. Verifica que sea una copia de seguridad válida.");
