@@ -111,7 +111,7 @@
         .bottom-nav {
             position: absolute; bottom: 0; left: 0; right: 0; height: 65px; background: rgba(10, 15, 28, 0.9);
             backdrop-filter: blur(20px); border-top: 1px solid var(--border-subtle); display: flex;
-            justify-style: space-around; align-items: center; padding: 0 10px; z-index: 100;
+            justify-content: space-around; align-items: center; padding: 0 10px; z-index: 100;
         }
         .nav-item {
             display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 0.75rem;
@@ -233,7 +233,7 @@
         .gallery-item img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
         .gallery-actions {
             position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.8); display: flex;
-            justify-content: space-around; padding: 4px 0; backdrop-filter: blur(4px);
+            justify-style: space-around; padding: 4px 0; backdrop-filter: blur(4px);
         }
         .gallery-btn { background: none; border: none; color: #fff; font-size: 0.75rem; cursor: pointer; padding: 2px 4px; }
 
@@ -525,20 +525,52 @@
 
     <script>
         const PIN_CORRECTO = "130037";
-        let notes = JSON.parse(localStorage.getItem('id_notes')) || [];
-        let avisos = JSON.parse(localStorage.getItem('id_avisos')) || [];
+        let notes = [];
+        let avisos = [];
         let currentPhotos = [];
         let currentNoteId = null;
         let directoryHandle = null;
 
-        // INDEXED DB PARA PERSISTIR EL HANDLE DE LA CARPETA
+        /* MOTOR COMPLETO DE INDEXEDDB PARA ALMACENAMIENTO CONTINUO */
         function openDB() {
             return new Promise((resolve, reject) => {
-                const req = indexedDB.open("FiliameDB", 1);
-                req.onupgradeneeded = () => req.result.createObjectStore("handles");
+                const req = indexedDB.open("FiliameDB", 2);
+                req.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains("handles")) {
+                        db.createObjectStore("handles");
+                    }
+                    if (!db.objectStoreNames.contains("appData")) {
+                        db.createObjectStore("appData");
+                    }
+                };
                 req.onsuccess = () => resolve(req.result);
                 req.onerror = () => reject(req.error);
             });
+        }
+
+        async function saveIDBData(key, value) {
+            try {
+                const db = await openDB();
+                const tx = db.transaction("appData", "readwrite");
+                tx.objectStore("appData").put(value, key);
+            } catch (e) {
+                console.error("Error al guardar en IndexedDB:", e);
+            }
+        }
+
+        async function getIDBData(key) {
+            try {
+                const db = await openDB();
+                return new Promise((resolve) => {
+                    const tx = db.transaction("appData", "readonly");
+                    const req = tx.objectStore("appData").get(key);
+                    req.onsuccess = () => resolve(req.result || null);
+                    req.onerror = () => resolve(null);
+                });
+            } catch (e) {
+                return null;
+            }
         }
 
         async function saveFolderHandleToDB(handle) {
@@ -561,14 +593,41 @@
             } catch (e) { return null; }
         }
 
+        /* INICIALIZACIÓN CON MIGRACIÓN TRANSPARENTE DE LOCALSTORAGE A INDEXEDDB */
         window.addEventListener('load', async () => {
+            // Cargar datos desde IndexedDB
+            let storedNotes = await getIDBData('id_notes');
+            let storedAvisos = await getIDBData('id_avisos');
+
+            // Si IndexedDB no tiene datos aún, buscar migración desde localStorage
+            if (!storedNotes) {
+                const legacyNotes = localStorage.getItem('id_notes');
+                if (legacyNotes) {
+                    try {
+                        storedNotes = JSON.parse(legacyNotes);
+                        await saveIDBData('id_notes', storedNotes);
+                    } catch (e) {}
+                }
+            }
+
+            if (!storedAvisos) {
+                const legacyAvisos = localStorage.getItem('id_avisos');
+                if (legacyAvisos) {
+                    try {
+                        storedAvisos = JSON.parse(legacyAvisos);
+                        await saveIDBData('id_avisos', storedAvisos);
+                    } catch (e) {}
+                }
+            }
+
+            notes = storedNotes || [];
+            avisos = storedAvisos || [];
+
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
             if (isIOS || !('showDirectoryPicker' in window)) {
-                // En iOS/Safari no se soporta vinculación de carpetas por seguridad del sistema
                 const btn = document.getElementById('btn-folder');
                 if (btn) btn.style.display = 'none';
             } else {
-                // Intentar reconectar la carpeta vinculada
                 const savedHandle = await getFolderHandleFromDB();
                 if (savedHandle) {
                     directoryHandle = savedHandle;
@@ -683,7 +742,7 @@
                 avisos.unshift(avisoData);
             }
 
-            localStorage.setItem('id_avisos', JSON.stringify(avisos));
+            await saveIDBData('id_avisos', avisos);
             await saveToLocalFolder();
 
             closeAvisoModal();
@@ -733,7 +792,7 @@
         async function deleteAviso(id) {
             if (confirm("¿Deseas eliminar este aviso telefónico?")) {
                 avisos = avisos.filter(a => String(a.id) !== String(id));
-                localStorage.setItem('id_avisos', JSON.stringify(avisos));
+                await saveIDBData('id_avisos', avisos);
                 await saveToLocalFolder();
                 renderAvisos();
             }
@@ -1090,7 +1149,7 @@
                 notes.unshift(noteData);
             }
 
-            localStorage.setItem('id_notes', JSON.stringify(notes));
+            await saveIDBData('id_notes', notes);
             await saveToLocalFolder();
 
             showScreen('screen-archive');
@@ -1146,7 +1205,7 @@
         async function deleteNoteDirect(id, nombre) {
             if (confirm(`¿Deseas eliminar la ficha de "${nombre}"?`)) {
                 notes = notes.filter(n => String(n.id) !== String(id));
-                localStorage.setItem('id_notes', JSON.stringify(notes));
+                await saveIDBData('id_notes', notes);
                 await saveToLocalFolder();
                 filterNotes();
             }
@@ -1229,7 +1288,7 @@
             const nombreStr = n && n.nombre ? ` de "${n.nombre}"` : '';
             if (confirm(`¿Estás seguro de que deseas eliminar la ficha${nombreStr}?`)) {
                 notes = notes.filter(n => String(n.id) !== String(currentNoteId));
-                localStorage.setItem('id_notes', JSON.stringify(notes));
+                await saveIDBData('id_notes', notes);
                 await saveToLocalFolder();
                 showScreen('screen-archive');
             }
@@ -1272,7 +1331,6 @@
             const blob = new Blob([jsonString], { type: 'application/json' });
             const fileName = `filiame_backup_${new Date().toISOString().slice(0, 10)}.json`;
 
-            // Forzar descarga directa por enlace para evitar pérdidas al compartir por API en móviles
             const downloadAnchor = document.createElement('a');
             downloadAnchor.href = URL.createObjectURL(blob);
             downloadAnchor.download = fileName;
@@ -1311,8 +1369,8 @@
                         return;
                     }
 
-                    localStorage.setItem('id_notes', JSON.stringify(notes));
-                    localStorage.setItem('id_avisos', JSON.stringify(avisos));
+                    await saveIDBData('id_notes', notes);
+                    await saveIDBData('id_avisos', avisos);
                     
                     await saveToLocalFolder();
                     renderNotes(notes);
