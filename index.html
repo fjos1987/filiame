@@ -6,6 +6,8 @@
     <title>FILIAME - TactiApp Pro</title>
     <!-- Librería OCR TesseractJS -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- Librería jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root {
             --bg-gradient: radial-gradient(circle at 50% -20%, #1a2646 0%, #080d1a 100%);
@@ -111,7 +113,7 @@
         .bottom-nav {
             position: absolute; bottom: 0; left: 0; right: 0; height: 65px; background: rgba(10, 15, 28, 0.9);
             backdrop-filter: blur(20px); border-top: 1px solid var(--border-subtle); display: flex;
-            justify-content: space-around; align-items: center; padding: 0 10px; z-index: 100;
+            justify-around; align-items: center; padding: 0 10px; z-index: 100;
         }
         .nav-item {
             display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 0.75rem;
@@ -186,6 +188,7 @@
         .btn-backup {
             background: rgba(224, 169, 109, 0.12); color: var(--accent-gold); border: 1px solid var(--card-border);
             padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 0.75rem; font-weight: 600; flex: 1; text-align: center;
+            transition: all 0.2s ease;
         }
 
         .backup-bar { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -233,7 +236,7 @@
         .gallery-item img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
         .gallery-actions {
             position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.8); display: flex;
-            justify-style: space-around; padding: 4px 0; backdrop-filter: blur(4px);
+            justify-around; padding: 4px 0; backdrop-filter: blur(4px);
         }
         .gallery-btn { background: none; border: none; color: #fff; font-size: 0.75rem; cursor: pointer; padding: 2px 4px; }
 
@@ -244,7 +247,7 @@
         .detail-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 10px; }
         .detail-gallery img { width: 100%; height: 110px; object-fit: cover; border-radius: var(--radius-medium); border: 1px solid var(--card-border); cursor: pointer; }
 
-        .header-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+        .header-title { display: flex; align-items: center; justify-between; margin-bottom: 15px; }
         .section-header-title { display: flex; align-items: center; gap: 10px; }
         .folder-icon-badge {
             display: flex; align-items: center; justify-content: center; background: rgba(224, 169, 109, 0.15);
@@ -323,7 +326,7 @@
                 </div>
                 
                 <div class="backup-bar">
-                    <button class="btn-backup" id="btn-folder" onclick="setupLocalFolder()">📁 Vincular Carpeta</button>
+                    <button class="btn-backup" id="btn-folder" onclick="toggleSyncState()">📁 Vincular Carpeta</button>
                     <button class="btn-backup" onclick="exportBackup()">📥 Descargar Copia</button>
                     <label class="btn-backup">
                         📤 Restaurar
@@ -465,7 +468,7 @@
                 <div id="detail-content"></div>
 
                 <button class="btn-whatsapp" onclick="shareWhatsApp()">💬 Compartir en WhatsApp</button>
-                <button class="btn-action" onclick="exportPDF()">📄 Descargar / Imprimir PDF</button>
+                <button class="btn-action" onclick="exportPDF()">📄 Descargar PDF</button>
                 <button class="btn-primary" onclick="editCurrentNote()">✏️ Editar Registro</button>
                 <button class="btn-danger" onclick="deleteCurrentNote()">🗑️ Eliminar Registro</button>
             </div>
@@ -530,6 +533,7 @@
         let currentPhotos = [];
         let currentNoteId = null;
         let directoryHandle = null;
+        let isSyncActive = false; // Control de estado de la sincronización
 
         /* MOTOR COMPLETO DE INDEXEDDB PARA ALMACENAMIENTO CONTINUO */
         function openDB() {
@@ -595,11 +599,9 @@
 
         /* INICIALIZACIÓN CON MIGRACIÓN TRANSPARENTE DE LOCALSTORAGE A INDEXEDDB */
         window.addEventListener('load', async () => {
-            // Cargar datos desde IndexedDB
             let storedNotes = await getIDBData('id_notes');
             let storedAvisos = await getIDBData('id_avisos');
 
-            // Si IndexedDB no tiene datos aún, buscar migración desde localStorage
             if (!storedNotes) {
                 const legacyNotes = localStorage.getItem('id_notes');
                 if (legacyNotes) {
@@ -631,23 +633,98 @@
                 const savedHandle = await getFolderHandleFromDB();
                 if (savedHandle) {
                     directoryHandle = savedHandle;
-                    updateFolderButtonState(true);
+                    isSyncActive = true;
+                    updateFolderButtonState('active');
+                } else {
+                    updateFolderButtonState('unlinked');
                 }
             }
         });
 
-        function updateFolderButtonState(isLinked) {
+        /* FUNCIÓN DE INTERRUPTOR / TOGGLE PARA LA SINCRONIZACIÓN */
+        async function toggleSyncState() {
+            if (!('showDirectoryPicker' in window)) {
+                alert("La sincronización directa requiere Android Chrome o Edge en PC.");
+                return;
+            }
+
+            if (!directoryHandle) {
+                // Caso 1: Nunca se ha vinculado -> Vincular por primera vez
+                await setupLocalFolder();
+            } else if (isSyncActive) {
+                // Caso 2: Está activo -> Pausar / Desincronizar
+                isSyncActive = false;
+                updateFolderButtonState('paused');
+            } else {
+                // Caso 3: Estaba pausado -> Volver a sincronizar
+                isSyncActive = true;
+                updateFolderButtonState('active');
+                await saveToLocalFolder(); // Guarda los cambios pendientes al reactivar
+            }
+        }
+
+        function updateFolderButtonState(state) {
             const btn = document.getElementById('btn-folder');
-            if (isLinked) {
+            if (!btn) return;
+
+            if (state === 'active') {
                 btn.style.background = 'rgba(46, 204, 113, 0.2)';
                 btn.style.borderColor = '#2ecc71';
                 btn.style.color = '#2ecc71';
                 btn.innerText = '✅ Sincronizado';
+            } else if (state === 'paused') {
+                btn.style.background = 'rgba(255, 152, 0, 0.18)';
+                btn.style.borderColor = '#ff9800';
+                btn.style.color = '#ffb74d';
+                btn.innerText = '⏸️ Desincronizado';
             } else {
                 btn.style.background = 'rgba(224, 169, 109, 0.12)';
                 btn.style.borderColor = 'var(--card-border)';
                 btn.style.color = 'var(--accent-gold)';
                 btn.innerText = '📁 Vincular Carpeta';
+            }
+        }
+
+        /* GUARDADO EN CARPETA LOCAL Y AUTO-SYNC */
+        async function setupLocalFolder() {
+            try {
+                directoryHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                await saveFolderHandleToDB(directoryHandle);
+                isSyncActive = true;
+                updateFolderButtonState('active');
+                alert(`✅ Carpeta "${directoryHandle.name}" vinculada. Los cambios se sincronizarán en tiempo real.`);
+                await saveToLocalFolder();
+            } catch (err) {
+                console.log("Selección de carpeta cancelada.", err);
+            }
+        }
+
+        async function verifyPermission(fileHandle, readWrite) {
+            const options = {};
+            if (readWrite) { options.mode = 'readwrite'; }
+            if ((await fileHandle.queryPermission(options)) === 'granted') { return true; }
+            if ((await fileHandle.requestPermission(options)) === 'granted') { return true; }
+            return false;
+        }
+
+        async function saveToLocalFolder() {
+            if (!directoryHandle || !isSyncActive) return;
+
+            try {
+                const hasPermission = await verifyPermission(directoryHandle, true);
+                if (!hasPermission) {
+                    isSyncActive = false;
+                    updateFolderButtonState('paused');
+                    return;
+                }
+
+                const fullData = { notes: notes, avisos: avisos };
+                const fileHandle = await directoryHandle.getFileHandle('filiame_base_datos.json', { create: true });
+                const writable = await fileHandle.createWritable();
+                await writable.write(JSON.stringify(fullData, null, 2));
+                await writable.close();
+            } catch (err) {
+                console.error("Error al escribir en la carpeta local:", err);
             }
         }
 
@@ -795,52 +872,6 @@
                 await saveIDBData('id_avisos', avisos);
                 await saveToLocalFolder();
                 renderAvisos();
-            }
-        }
-
-        /* GUARDADO EN CARPETA LOCAL Y AUTO-SYNC */
-        async function setupLocalFolder() {
-            if (!('showDirectoryPicker' in window)) {
-                alert("La sincronización de carpeta directa solo es compatible con Android Chrome / Edge en ordenador.");
-                return;
-            }
-
-            try {
-                directoryHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-                await saveFolderHandleToDB(directoryHandle);
-                updateFolderButtonState(true);
-                alert(`✅ Carpeta "${directoryHandle.name}" vinculada. Los cambios se guardarán automáticamente.`);
-                await saveToLocalFolder();
-            } catch (err) {
-                console.log("El usuario canceló la selección de carpeta.", err);
-            }
-        }
-
-        async function verifyPermission(fileHandle, readWrite) {
-            const options = {};
-            if (readWrite) { options.mode = 'readwrite'; }
-            if ((await fileHandle.queryPermission(options)) === 'granted') { return true; }
-            if ((await fileHandle.requestPermission(options)) === 'granted') { return true; }
-            return false;
-        }
-
-        async function saveToLocalFolder() {
-            if (!directoryHandle) return;
-
-            try {
-                const hasPermission = await verifyPermission(directoryHandle, true);
-                if (!hasPermission) {
-                    updateFolderButtonState(false);
-                    return;
-                }
-
-                const fullData = { notes: notes, avisos: avisos };
-                const fileHandle = await directoryHandle.getFileHandle('filiame_base_datos.json', { create: true });
-                const writable = await fileHandle.createWritable();
-                await writable.write(JSON.stringify(fullData, null, 2));
-                await writable.close();
-            } catch (err) {
-                console.error("Error al escribir en la carpeta local:", err);
             }
         }
 
@@ -1316,8 +1347,184 @@
             window.open(url, '_blank');
         }
 
+        /* GENERACIÓN Y DESCARGA DE PDF COMPACTO */
         function exportPDF() {
-            window.print();
+            const n = notes.find(item => String(item.id) === String(currentNoteId));
+            if (!n) return;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const margin = 15;
+            let y = 15;
+
+            // Header Principal
+            doc.setFillColor(15, 23, 42);
+            doc.rect(0, 0, 210, 28, 'F');
+
+            doc.setTextColor(224, 169, 109);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(16);
+            doc.text("FILIAME", margin, 13);
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.text("INFORME DE INTERVENCIÓN Y REGISTRO TÁCTICO", margin, 18);
+
+            const fechaReporte = new Date().toLocaleDateString('es-ES');
+            doc.text(`FECHA DE INFORME: ${fechaReporte}`, 210 - margin, 18, { align: 'right' });
+
+            y = 35;
+
+            // Bloque: Datos Generales
+            doc.setFillColor(245, 247, 250);
+            doc.rect(margin, y, 180, 8, 'F');
+            doc.setTextColor(15, 23, 42);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.text("1. DATOS GENERALES DE LA INTERVENCIÓN", margin + 3, y + 5.5);
+
+            y += 12;
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.text("Categoría:", margin, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text((n.categoria || 'Otro').toUpperCase(), margin + 25, y);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text("Fecha/Hora:", margin + 90, y);
+            doc.setFont('helvetica', 'normal');
+            const fechaStr = n.fecha_intervencion ? formatFechaHora(n.fecha_intervencion) : (n.fecha_creacion || '-');
+            doc.text(fechaStr, margin + 115, y);
+
+            y += 6;
+            doc.setFont('helvetica', 'bold');
+            doc.text("Lugar:", margin, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(n.lugar || '-', margin + 25, y);
+
+            // Bloque: Filiación e Identificación
+            y += 10;
+            doc.setFillColor(245, 247, 250);
+            doc.rect(margin, y, 180, 8, 'F');
+            doc.setTextColor(15, 23, 42);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.text("2. FILIACIÓN E IDENTIFICACIÓN DEL IMPLICADO", margin + 3, y + 5.5);
+
+            y += 12;
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.text("Nombre Completo:", margin, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(n.nombre || '-', margin + 35, y);
+
+            y += 6;
+            doc.setFont('helvetica', 'bold');
+            doc.text("Nº Documento:", margin, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(n.documento || '-', margin + 35, y);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text("Teléfono:", margin + 90, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(n.telefono || '-', margin + 115, y);
+
+            y += 6;
+            doc.setFont('helvetica', 'bold');
+            doc.text("Nacimiento:", margin, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${n.lugar_nac || '-'} (${n.fecha_nac || '-'})`, margin + 35, y);
+
+            y += 6;
+            doc.setFont('helvetica', 'bold');
+            doc.text("Padres:", margin, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(n.padres || '-', margin + 35, y);
+
+            y += 6;
+            doc.setFont('helvetica', 'bold');
+            doc.text("Domicilio:", margin, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(n.domicilio || '-', margin + 35, y);
+
+            y += 6;
+            doc.setFont('helvetica', 'bold');
+            doc.text("Vehículo/Matrícula:", margin, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${n.vehiculo || '-'} ${n.matricula ? '[' + n.matricula + ']' : ''}`, margin + 35, y);
+
+            // Bloque: Hechos
+            y += 10;
+            doc.setFillColor(245, 247, 250);
+            doc.rect(margin, y, 180, 8, 'F');
+            doc.setTextColor(15, 23, 42);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.text("3. RELACIÓN DE LOS HECHOS", margin + 3, y + 5.5);
+
+            y += 12;
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            const splitHechos = doc.splitTextToSize(n.hechos || 'Sin detalles registrados.', 180);
+            doc.text(splitHechos, margin, y);
+            
+            y += (splitHechos.length * 5) + 5;
+
+            // Bloque: Fotografías Adjuntas
+            if (n.fotos && n.fotos.length > 0) {
+                if (y > 220) {
+                    doc.addPage();
+                    y = 20;
+                }
+
+                doc.setFillColor(245, 247, 250);
+                doc.rect(margin, y, 180, 8, 'F');
+                doc.setTextColor(15, 23, 42);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.text("4. REGISTRO FOTOGRÁFICO", margin + 3, y + 5.5);
+
+                y += 12;
+                let photoX = margin;
+                const photoWidth = 55;
+                const photoHeight = 40;
+
+                n.fotos.forEach((imgBase64, idx) => {
+                    if (photoX + photoWidth > 210 - margin) {
+                        photoX = margin;
+                        y += photoHeight + 5;
+                    }
+                    if (y + photoHeight > 280) {
+                        doc.addPage();
+                        y = 20;
+                        photoX = margin;
+                    }
+                    try {
+                        doc.addImage(imgBase64, 'JPEG', photoX, y, photoWidth, photoHeight);
+                        photoX += photoWidth + 5;
+                    } catch (e) {
+                        console.error("Error al añadir imagen al PDF:", e);
+                    }
+                });
+            }
+
+            // Pie de página
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(120, 120, 120);
+                doc.text(`Documento de uso confidencial - FILIAME TactiApp Pro - Página ${i} de ${pageCount}`, 105, 290, { align: 'center' });
+            }
+
+            // Descarga del documento
+            const nombreArchivo = `filiame_${(n.nombre || 'registro').toLowerCase().replace(/\s+/g, '_')}_${n.id}.pdf`;
+            doc.save(nombreArchivo);
         }
 
         /* EXPORTACIÓN / IMPORTACIÓN COMPLETA GARANTIZADA */
