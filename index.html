@@ -111,11 +111,11 @@
         .bottom-nav {
             position: absolute; bottom: 0; left: 0; right: 0; height: 65px; background: rgba(10, 15, 28, 0.9);
             backdrop-filter: blur(20px); border-top: 1px solid var(--border-subtle); display: flex;
-            justify-content: space-around; align-items: center; padding: 0 10px; z-index: 100;
+            justify-style: space-around; align-items: center; padding: 0 10px; z-index: 100;
         }
         .nav-item {
             display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 0.75rem;
-            text-decoration: none; background: none; border: none; cursor: pointer; gap: 4px; transition: color 0.2s;
+            text-decoration: none; background: none; border: none; cursor: pointer; gap: 4px; transition: color 0.2s; flex: 1;
         }
         .nav-item.active, .nav-item:hover { color: var(--accent-gold); }
         .nav-item svg { width: 22px; height: 22px; fill: currentColor; }
@@ -185,7 +185,7 @@
 
         .btn-backup {
             background: rgba(224, 169, 109, 0.12); color: var(--accent-gold); border: 1px solid var(--card-border);
-            padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 0.75rem; font-weight: 600; flex: 1; text-align: center;
+            padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 0.75rem; font-weight: 600; flex: 1; text-align: center;
         }
 
         .backup-bar { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -205,9 +205,7 @@
             width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
             cursor: pointer; transition: all 0.2s; z-index: 10;
         }
-        .btn-delete-card:hover {
-            background: var(--danger-red); color: #fff; border-color: var(--danger-red);
-        }
+        .btn-delete-card:hover { background: var(--danger-red); color: #fff; border-color: var(--danger-red); }
 
         .badge-cat { font-size: 0.68rem; padding: 3px 8px; border-radius: 10px; font-weight: 700; text-transform: uppercase; }
         .cat-identificacion { background: rgba(52, 152, 219, 0.25); color: #3498db; border: 1px solid #3498db; }
@@ -219,7 +217,7 @@
 
         .card-sub { font-size: 0.82rem; color: var(--text-muted); margin-top: 3px; }
 
-        /* MULTI FOTOS / OCR */
+        /* FOTOS / OCR */
         .photo-controls-row { display: flex; gap: 8px; margin-top: 6px; }
         .custom-file-upload {
             flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--input-bg);
@@ -260,7 +258,7 @@
             font-weight: bold; background: rgba(52, 152, 219, 0.1); padding: 8px; border-radius: 8px; border: 1px solid #3498db;
         }
 
-        /* MODALES & LIGHTBOX */
+        /* MODALES */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 1000;
@@ -533,6 +531,67 @@
         let currentNoteId = null;
         let directoryHandle = null;
 
+        // INDEXED DB PARA PERSISTIR EL HANDLE DE LA CARPETA
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open("FiliameDB", 1);
+                req.onupgradeneeded = () => req.result.createObjectStore("handles");
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        async function saveFolderHandleToDB(handle) {
+            try {
+                const db = await openDB();
+                const tx = db.transaction("handles", "readwrite");
+                tx.objectStore("handles").put(handle, "folder");
+            } catch (e) { console.error(e); }
+        }
+
+        async function getFolderHandleFromDB() {
+            try {
+                const db = await openDB();
+                return new Promise((resolve) => {
+                    const tx = db.transaction("handles", "readonly");
+                    const req = tx.objectStore("handles").get("folder");
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => resolve(null);
+                });
+            } catch (e) { return null; }
+        }
+
+        window.addEventListener('load', async () => {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            if (isIOS || !('showDirectoryPicker' in window)) {
+                // En iOS/Safari no se soporta vinculación de carpetas por seguridad del sistema
+                const btn = document.getElementById('btn-folder');
+                if (btn) btn.style.display = 'none';
+            } else {
+                // Intentar reconectar la carpeta vinculada
+                const savedHandle = await getFolderHandleFromDB();
+                if (savedHandle) {
+                    directoryHandle = savedHandle;
+                    updateFolderButtonState(true);
+                }
+            }
+        });
+
+        function updateFolderButtonState(isLinked) {
+            const btn = document.getElementById('btn-folder');
+            if (isLinked) {
+                btn.style.background = 'rgba(46, 204, 113, 0.2)';
+                btn.style.borderColor = '#2ecc71';
+                btn.style.color = '#2ecc71';
+                btn.innerText = '✅ Sincronizado';
+            } else {
+                btn.style.background = 'rgba(224, 169, 109, 0.12)';
+                btn.style.borderColor = 'var(--card-border)';
+                btn.style.color = 'var(--accent-gold)';
+                btn.innerText = '📁 Vincular Carpeta';
+            }
+        }
+
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
@@ -680,31 +739,42 @@
             }
         }
 
-        /* GUARDADO EN CARPETA LOCAL */
+        /* GUARDADO EN CARPETA LOCAL Y AUTO-SYNC */
         async function setupLocalFolder() {
             if (!('showDirectoryPicker' in window)) {
-                alert("Tu navegador actual no soporta la vinculación directa de carpetas. Se recomienda Chrome o Edge.");
+                alert("La sincronización de carpeta directa solo es compatible con Android Chrome / Edge en ordenador.");
                 return;
             }
 
             try {
                 directoryHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-                document.getElementById('btn-folder').style.background = 'rgba(46, 204, 113, 0.2)';
-                document.getElementById('btn-folder').style.borderColor = '#2ecc71';
-                document.getElementById('btn-folder').style.color = '#2ecc71';
-                document.getElementById('btn-folder').innerText = '✅ Vinculado';
-                alert(`✅ Carpeta "${directoryHandle.name}" vinculada con éxito. Los datos se sincronizarán directamente.`);
-                
-                await syncFromLocalFolder();
+                await saveFolderHandleToDB(directoryHandle);
+                updateFolderButtonState(true);
+                alert(`✅ Carpeta "${directoryHandle.name}" vinculada. Los cambios se guardarán automáticamente.`);
+                await saveToLocalFolder();
             } catch (err) {
                 console.log("El usuario canceló la selección de carpeta.", err);
             }
+        }
+
+        async function verifyPermission(fileHandle, readWrite) {
+            const options = {};
+            if (readWrite) { options.mode = 'readwrite'; }
+            if ((await fileHandle.queryPermission(options)) === 'granted') { return true; }
+            if ((await fileHandle.requestPermission(options)) === 'granted') { return true; }
+            return false;
         }
 
         async function saveToLocalFolder() {
             if (!directoryHandle) return;
 
             try {
+                const hasPermission = await verifyPermission(directoryHandle, true);
+                if (!hasPermission) {
+                    updateFolderButtonState(false);
+                    return;
+                }
+
                 const fullData = { notes: notes, avisos: avisos };
                 const fileHandle = await directoryHandle.getFileHandle('filiame_base_datos.json', { create: true });
                 const writable = await fileHandle.createWritable();
@@ -712,30 +782,6 @@
                 await writable.close();
             } catch (err) {
                 console.error("Error al escribir en la carpeta local:", err);
-            }
-        }
-
-        async function syncFromLocalFolder() {
-            if (!directoryHandle) return;
-
-            try {
-                const fileHandle = await directoryHandle.getFileHandle('filiame_base_datos.json');
-                const file = await fileHandle.getFile();
-                const text = await file.text();
-                const data = JSON.parse(text);
-                
-                if (data.notes || data.avisos) {
-                    notes = data.notes || [];
-                    avisos = data.avisos || [];
-                } else if (Array.isArray(data)) {
-                    notes = data;
-                }
-
-                localStorage.setItem('id_notes', JSON.stringify(notes));
-                localStorage.setItem('id_avisos', JSON.stringify(avisos));
-                renderNotes(notes);
-            } catch (err) {
-                // El archivo no existe aún
             }
         }
 
@@ -815,7 +861,7 @@
             document.getElementById('lightbox').classList.remove('active');
         }
 
-        /* MOTOR OPTIMIZADO PARA DETECCIÓN DE DNI / MATRÍCULAS */
+        /* MOTOR OPTIMIZADO OCR */
         async function scanTextFromImageIndex(index) {
             const rawImage = currentPhotos[index];
             if (!rawImage) return;
@@ -824,7 +870,6 @@
             loading.style.display = 'block';
 
             try {
-                // Se usa la imagen original sin filtro B/N destructivo para preservar el texto
                 const worker = await Tesseract.createWorker(['spa', 'eng']);
                 const ret = await worker.recognize(rawImage);
                 await worker.terminate();
@@ -834,8 +879,7 @@
 
                 let detectedData = [];
 
-                // 1. EXTRAER DNI/NIE (Ej: 43141087X)
-                // Busca formato 8 números + letra, o precedido por 'DNI'
+                // 1. DNI/NIE
                 const dniMatch = rawText.match(/DNI\s*([0-9]{8}[A-Z])/i) || 
                                  rawText.match(/\b([0-9]{8}[A-Z])\b/i) || 
                                  rawText.match(/\b([XYZ][0-9]{7}[A-Z])\b/i);
@@ -845,35 +889,28 @@
                     detectedData.push("Nº Documento");
                 }
 
-                // 2. EXTRAER FECHA NACIMIENTO (Ej: 18 12 1987)
-                // Soporta espacios, guiones y barras como separadores
+                // 2. FECHA NACIMIENTO
                 const dateMatch = rawText.match(/\b(0[1-9]|[12][0-9]|3[01])[\s\/\.-]+(0[1-9]|1[02])[\s\/\.-]+(19[0-9]{2}|20[0-9]{2})\b/);
                 if (dateMatch) {
-                    const dia = dateMatch[1];
-                    const mes = dateMatch[2];
-                    const anio = dateMatch[3];
-                    document.getElementById('fecha_nac').value = `${dia}/${mes}/${anio}`;
+                    document.getElementById('fecha_nac').value = `${dateMatch[1]}/${dateMatch[2]}/${dateMatch[3]}`;
                     detectedData.push("Fecha Nacimiento");
                 }
 
-                // 3. EXTRAER MATRÍCULA (Ej: 1234ABC o M1234AB)
+                // 3. MATRÍCULA
                 const matMatch = rawText.match(/\b[0-9]{4}[\s\-]?[B-DF-HJ-NP-TV-Z]{3}\b/i) || 
                                  rawText.match(/\b[A-Z]{1,2}[\s\-]?[0-9]{4}[\s\-]?[A-Z]{1,2}\b/i);
                 if (matMatch) {
-                    const cleanMat = matMatch[0].replace(/[\s\-]/g, '').toUpperCase();
-                    document.getElementById('matricula').value = cleanMat;
+                    document.getElementById('matricula').value = matMatch[0].replace(/[\s\-]/g, '').toUpperCase();
                     detectedData.push("Matrícula");
                 }
 
-                // 4. EXTRAER NOMBRES Y APELLIDOS (Formato DNI España)
+                // 4. APELLIDOS Y NOMBRE
                 const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                 let apellidos = "";
                 let nombre = "";
 
                 for (let i = 0; i < lines.length; i++) {
                     const lUpper = lines[i].toUpperCase();
-
-                    // Lectura Apellidos
                     if (lUpper.includes("APELLIDOS") || lUpper.includes("COGNOMS")) {
                         let j = i + 1;
                         let foundList = [];
@@ -887,7 +924,6 @@
                         if (foundList.length > 0) apellidos = foundList.join(" ");
                     }
 
-                    // Lectura Nombre
                     if (lUpper.includes("NOMBRE") || lUpper.includes("NOM")) {
                         let j = i + 1;
                         while (j < lines.length && j <= i + 2) {
@@ -901,7 +937,6 @@
                     }
                 }
 
-                // Si se localizó nombre o apellido, estructurar el campo Nombre Completo
                 if (apellidos || nombre) {
                     const full = `${apellidos} ${nombre}`.trim();
                     if (full.length > 2) {
@@ -915,7 +950,7 @@
                 if (detectedData.length > 0) {
                     alert(`✅ OCR procesado con éxito.\n\nCampos extraídos: ${detectedData.join(', ')}.`);
                 } else {
-                    alert("ℹ️ No se extrajeron campos automáticos. Verifica que la imagen esté enfocada y recta.");
+                    alert("ℹ️ No se extrajeron campos automáticos. Verifica que la imagen esté enfocada.");
                 }
 
             } catch (err) {
@@ -924,7 +959,7 @@
             }
         }
 
-        /* REGISTROS DE USUARIOS Y LÓGICA GENERAL */
+        /* BÚSQUEDA Y REGISTRO */
         function checkReincidencia() {
             const doc = document.getElementById('documento').value.trim().toUpperCase();
             const mat = document.getElementById('matricula').value.trim().toUpperCase();
@@ -1226,36 +1261,28 @@
             window.print();
         }
 
-        async function exportBackup() {
-            const backupData = { notes, avisos };
-            const jsonString = JSON.stringify(backupData, null, 2);
+        /* EXPORTACIÓN / IMPORTACIÓN COMPLETA GARANTIZADA */
+        function exportBackup() {
+            const backupData = {
+                notes: notes,
+                avisos: avisos
+            };
+
+            const jsonString = JSON.stringify(backupData);
+            const blob = new Blob([jsonString], { type: 'application/json' });
             const fileName = `filiame_backup_${new Date().toISOString().slice(0, 10)}.json`;
 
-            if (navigator.canShare && navigator.share) {
-                try {
-                    const file = new File([jsonString], fileName, { type: 'application/json' });
-                    if (navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            files: [file],
-                            title: 'Copia de seguridad FILIAME',
-                            text: 'Copia de seguridad de registros y avisos'
-                        });
-                        return;
-                    }
-                } catch (err) {
-                    console.log("Compartido cancelado:", err);
-                }
-            }
-
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
+            // Forzar descarga directa por enlace para evitar pérdidas al compartir por API en móviles
             const downloadAnchor = document.createElement('a');
-            downloadAnchor.href = url;
+            downloadAnchor.href = URL.createObjectURL(blob);
             downloadAnchor.download = fileName;
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
-            downloadAnchor.remove();
-            URL.revokeObjectURL(url);
+            
+            setTimeout(() => {
+                downloadAnchor.remove();
+                URL.revokeObjectURL(downloadAnchor.href);
+            }, 1000);
         }
 
         function importBackup(event) {
@@ -1265,20 +1292,33 @@
             const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
-                    const imported = JSON.parse(e.target.result);
+                    const content = e.target.result;
+                    if (!content || content.trim() === "") {
+                        alert("⚠️ El archivo seleccionado está vacío.");
+                        return;
+                    }
+
+                    const imported = JSON.parse(content);
+                    
                     if (imported.notes || imported.avisos) {
                         notes = imported.notes || [];
                         avisos = imported.avisos || [];
                     } else if (Array.isArray(imported)) {
                         notes = imported;
+                        avisos = [];
+                    } else {
+                        alert("⚠️ Estructura de datos no válida.");
+                        return;
                     }
+
                     localStorage.setItem('id_notes', JSON.stringify(notes));
                     localStorage.setItem('id_avisos', JSON.stringify(avisos));
+                    
                     await saveToLocalFolder();
                     renderNotes(notes);
-                    alert("✅ Copia de seguridad restaurada con éxito.");
+                    alert(`✅ Copia cargada con éxito. (${notes.length} identificaciones, ${avisos.length} avisos)`);
                 } catch (err) {
-                    alert("⚠️ Error al leer el archivo. Asegúrate de seleccionar un archivo .json válido.");
+                    alert("⚠️ Error al importar el archivo JSON. Verifica que sea una copia de seguridad válida.");
                 }
                 event.target.value = '';
             };
