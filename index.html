@@ -188,7 +188,7 @@
 
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.4); }
-            70% { shadow: 0 0 0 8px rgba(255, 152, 0, 0); }
+            70% { box-shadow: 0 0 0 8px rgba(255, 152, 0, 0); }
             100% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0); }
         }
 
@@ -283,7 +283,7 @@
         .gallery-item img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
         .gallery-actions {
             position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.8); display: flex;
-            justify-around: padding: 4px 0; backdrop-filter: blur(4px);
+            justify-content: space-around; padding: 4px 0; backdrop-filter: blur(4px);
         }
         .gallery-btn { background: none; border: none; color: #fff; font-size: 0.75rem; cursor: pointer; padding: 2px 4px; }
 
@@ -292,7 +292,8 @@
         .detail-label { font-size: 0.75rem; color: var(--accent-gold); font-weight: 700; text-transform: uppercase; }
         .detail-value { font-size: 0.95rem; color: var(--text-white); margin-top: 4px; word-break: break-word; }
         .detail-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 10px; }
-        .detail-gallery img { width: 100%; height: 110px; object-fit: cover; border-radius: var(--radius-medium); border: 1px solid var(--card-border); cursor: pointer; }
+        .detail-gallery img { width: 100%; height: 110px; object-fit: cover; border-radius: var(--radius-medium); border: 1px solid var(--card-border); cursor: pointer; transition: transform 0.2s; }
+        .detail-gallery img:hover { transform: scale(1.03); border-color: var(--accent-gold); }
 
         .header-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
         .section-header-title { display: flex; align-items: center; gap: 10px; }
@@ -308,10 +309,10 @@
             font-weight: bold; background: rgba(52, 152, 219, 0.1); padding: 8px; border-radius: 8px; border: 1px solid #3498db;
         }
 
-        /* MODALES */
+        /* MODALES Y LIGHTBOX INTERACTIVO DE ZOOM */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 1000;
+            background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(10px); z-index: 1000;
             justify-content: center; align-items: center; padding: 20px;
         }
         .modal-overlay.active { display: flex; }
@@ -321,12 +322,52 @@
             max-height: 90vh; overflow-y: auto;
         }
 
-        .lightbox-img { max-width: 90%; max-height: 80vh; border-radius: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.8); object-fit: contain; }
-        .lightbox-close {
-            position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.15);
-            color: white; border: none; font-size: 1.2rem; width: 36px; height: 36px; border-radius: 50%;
-            cursor: pointer; display: flex; justify-content: center; align-items: center;
+        /* LIGHTBOX AVANZADO CON ZOOM */
+        .lightbox-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(5, 10, 20, 0.95); backdrop-filter: blur(12px); z-index: 2000;
+            flex-direction: column; justify-content: space-between; align-items: center;
+            overflow: hidden; touch-action: none;
         }
+        .lightbox-modal.active { display: flex; }
+
+        .lightbox-toolbar {
+            width: 100%; padding: 15px 20px; display: flex; justify-content: space-between;
+            align-items: center; z-index: 2010; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+        }
+        .lightbox-title { font-size: 0.9rem; color: var(--accent-gold); font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .lightbox-viewport {
+            flex: 1; width: 100%; height: 100%; display: flex; justify-content: center;
+            align-items: center; overflow: hidden; position: relative; cursor: grab;
+        }
+        .lightbox-viewport:active { cursor: grabbing; }
+
+        .lightbox-img-zoom {
+            max-width: 90vw; max-height: 75vh; object-fit: contain; border-radius: 8px;
+            transition: transform 0.1s ease-out; transform-origin: center center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8); user-select: none; -webkit-user-drag: none;
+        }
+
+        .lightbox-controls {
+            width: 100%; padding: 15px; display: flex; justify-content: center; gap: 12px;
+            z-index: 2010; background: linear-gradient(to top, rgba(0,0,0,0.85), transparent);
+        }
+
+        .zoom-btn {
+            background: rgba(25, 35, 60, 0.85); border: 1px solid var(--card-border); color: #fff;
+            width: 44px; height: 44px; border-radius: 50%; font-size: 1.2rem; font-weight: bold;
+            display: flex; justify-content: center; align-items: center; cursor: pointer;
+            backdrop-filter: blur(6px); transition: all 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        .zoom-btn:active { background: var(--accent-gold); color: #000; transform: scale(0.95); }
+
+        .lightbox-close {
+            background: rgba(255,255,255,0.15); color: white; border: none; font-size: 1.2rem;
+            width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: flex;
+            justify-content: center; align-items: center; transition: background 0.2s;
+        }
+        .lightbox-close:hover { background: var(--danger-red); }
     </style>
 </head>
 <body>
@@ -659,7 +700,7 @@
     <!-- MODAL NUEVO / EDITAR AVISO TELEFÓNICO -->
     <div id="modal-aviso" class="modal-overlay">
         <div class="modal-content">
-            <button class="lightbox-close" onclick="closeAvisoModal()">✕</button>
+            <button class="lightbox-close" style="position:absolute; top:15px; right:15px;" onclick="closeAvisoModal()">✕</button>
             <h3 id="aviso-modal-title" style="margin-top:0; color:var(--accent-gold); font-size:1.1rem; text-transform:uppercase;">📞 Registrar Llamada / Aviso</h3>
             <input type="hidden" id="aviso_id">
 
@@ -691,7 +732,7 @@
     <!-- MODAL CONFIRMACIÓN BORRAR TODO -->
     <div id="modal-delete-all" class="modal-overlay">
         <div class="modal-content">
-            <button class="lightbox-close" onclick="closeDeleteAllModal()">✕</button>
+            <button class="lightbox-close" style="position:absolute; top:15px; right:15px;" onclick="closeDeleteAllModal()">✕</button>
             <h3 style="margin-top:0; color:var(--danger-red); font-size:1.1rem; text-transform:uppercase;">⚠️ Borrado Absoluto</h3>
             <p style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.4;">Esta acción eliminará de forma permanente <strong>todos los registros de personas, vehículos y avisos</strong>.</p>
             
@@ -702,10 +743,23 @@
         </div>
     </div>
 
-    <!-- MODAL LIGHTBOX FOTOS -->
-    <div id="lightbox" class="modal-overlay" onclick="closeLightbox()">
-        <button class="lightbox-close" onclick="closeLightbox()">✕</button>
-        <img id="lightbox-img" class="lightbox-img" src="" alt="Vista ampliada">
+    <!-- MODAL LIGHTBOX INTERACTIVO CON ZOOM Y DESPLAZAMIENTO -->
+    <div id="lightbox" class="lightbox-modal">
+        <div class="lightbox-toolbar">
+            <span class="lightbox-title">🔍 VISOR DE FOTOGRAFÍA</span>
+            <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+        </div>
+
+        <div class="lightbox-viewport" id="lightbox-viewport">
+            <img id="lightbox-img" class="lightbox-img-zoom" src="" alt="Imagen ampliada">
+        </div>
+
+        <div class="lightbox-controls">
+            <button class="zoom-btn" onclick="zoomIn()" title="Acercar">➕</button>
+            <button class="zoom-btn" onclick="zoomOut()" title="Alejar">➖</button>
+            <button class="zoom-btn" onclick="resetZoom()" title="Restablecer">🔄</button>
+            <button class="zoom-btn" onclick="rotateImg()" title="Girar">↻</button>
+        </div>
     </div>
 
     <script>
@@ -724,6 +778,14 @@
 
         let directoryHandle = null;
         let isSyncActive = false;
+
+        /* VARIABLES PARA VISOR INTERACTIVO CON ZOOM (LIGHTBOX) */
+        let zoomScale = 1;
+        let zoomPosX = 0;
+        let zoomPosY = 0;
+        let zoomRotation = 0;
+        let isDragging = false;
+        let startX = 0, startY = 0;
 
         /* INDEXEDDB */
         function openDB() {
@@ -801,6 +863,8 @@
                     updateFolderButtonState('unlinked');
                 }
             }
+
+            initZoomEvents();
         });
 
         /* TOGGLE SYNC */
@@ -1089,7 +1153,7 @@
             let photosHTML = "";
 
             if (v.fotos && v.fotos.length > 0) {
-                photosHTML = `<div class="detail-label">📷 Fotografía(s) del Vehículo</div>
+                photosHTML = `<div class="detail-label">📷 Fotografía(s) del Vehículo (Haz clic para zoom)</div>
                 <div class="detail-gallery">
                     ${v.fotos.map(f => `<img src="${f}" onclick="openLightbox('${f}')">`).join('')}
                 </div>`;
@@ -1360,14 +1424,93 @@
             renderGallery(type);
         }
 
-        /* LIGHTBOX */
+        /* LÓGICA DE VISOR Y CONTROLES DE ZOOM / ARRASTRE */
         function openLightbox(src) {
-            document.getElementById('lightbox-img').src = src;
+            const img = document.getElementById('lightbox-img');
+            img.src = src;
+            resetZoom();
             document.getElementById('lightbox').classList.add('active');
         }
 
         function closeLightbox() {
             document.getElementById('lightbox').classList.remove('active');
+        }
+
+        function updateImgTransform() {
+            const img = document.getElementById('lightbox-img');
+            img.style.transform = `translate(${zoomPosX}px, ${zoomPosY}px) scale(${zoomScale}) rotate(${zoomRotation}deg)`;
+        }
+
+        function zoomIn() {
+            zoomScale = Math.min(zoomScale + 0.3, 5);
+            updateImgTransform();
+        }
+
+        function zoomOut() {
+            zoomScale = Math.max(zoomScale - 0.3, 0.5);
+            if (zoomScale <= 1) { zoomPosX = 0; zoomPosY = 0; }
+            updateImgTransform();
+        }
+
+        function resetZoom() {
+            zoomScale = 1;
+            zoomPosX = 0;
+            zoomPosY = 0;
+            zoomRotation = 0;
+            updateImgTransform();
+        }
+
+        function rotateImg() {
+            zoomRotation = (zoomRotation + 90) % 360;
+            updateImgTransform();
+        }
+
+        function initZoomEvents() {
+            const viewport = document.getElementById('lightbox-viewport');
+
+            viewport.addEventListener('mousedown', (e) => {
+                if (zoomScale > 1) {
+                    isDragging = true;
+                    startX = e.clientX - zoomPosX;
+                    startY = e.clientY - zoomPosY;
+                }
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    zoomPosX = e.clientX - startX;
+                    zoomPosY = e.clientY - startY;
+                    updateImgTransform();
+                }
+            });
+
+            window.addEventListener('mouseup', () => { isDragging = false; });
+
+            // Eventos Táctiles (Móviles)
+            viewport.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1 && zoomScale > 1) {
+                    isDragging = true;
+                    startX = e.touches[0].clientX - zoomPosX;
+                    startY = e.touches[0].clientY - zoomPosY;
+                }
+            });
+
+            viewport.addEventListener('touchmove', (e) => {
+                if (isDragging && e.touches.length === 1) {
+                    zoomPosX = e.touches[0].clientX - startX;
+                    zoomPosY = e.touches[0].clientY - startY;
+                    updateImgTransform();
+                }
+            });
+
+            viewport.addEventListener('touchend', () => { isDragging = false; });
+
+            // Zoom con Rueda del Ratón
+            viewport.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                if (e.deltaY < 0) zoomIn();
+                else zoomOut();
+            }, { passive: false });
         }
 
         /* ESCANEO OCR */
@@ -1676,7 +1819,7 @@
             let photosHTML = "";
 
             if (n.fotos && n.fotos.length > 0) {
-                photosHTML = `<div class="detail-label">📷 Fotografía(s) adjunta(s)</div>
+                photosHTML = `<div class="detail-label">📷 Fotografía(s) adjunta(s) (Haz clic para zoom)</div>
                 <div class="detail-gallery">
                     ${n.fotos.map(f => `<img src="${f}" onclick="openLightbox('${f}')">`).join('')}
                 </div>`;
@@ -1763,7 +1906,7 @@
             }
         }
 
-        /* WHATSAPP Y PDF */
+        /* WHATSAPP Y EXPORTACIÓN DE PDF COMPLETA */
         function shareWhatsApp() {
             let text = "";
             if (currentDetailType === 'person') {
@@ -1777,6 +1920,7 @@
                 text += `*Documento:* ${n.documento || '-'}\n`;
                 text += `*Nacimiento:* ${n.fecha_nac || '-'} (${n.lugar_nac || '-'})\n`;
                 text += `*Teléfono:* ${n.telefono || '-'}\n`;
+                text += `*Padres:* ${n.padres || '-'}\n`;
                 text += `*Domicilio:* ${n.domicilio || '-'}\n`;
                 text += `*Vehículo:* ${n.vehiculo || '-'} [${n.matricula || '-'}]\n`;
                 text += `*Lugar:* ${n.lugar || '-'}\n`;
@@ -1804,6 +1948,7 @@
             const margin = 15;
             let y = 15;
 
+            // Header PDF
             doc.setFillColor(15, 23, 42);
             doc.rect(0, 0, 210, 28, 'F');
             doc.setTextColor(224, 169, 109);
@@ -1829,32 +1974,49 @@
                 doc.setTextColor(15, 23, 42);
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(10);
-                doc.text("1. DATOS DE LA PERSONA / INTERVENCIÓN", margin + 3, y + 5.5);
+                doc.text("1. DATOS COMPLETOS DE LA PERSONA / INTERVENCIÓN", margin + 3, y + 5.5);
 
                 y += 12;
                 doc.setFontSize(9);
-                doc.text("Nombre Completo:", margin, y);
-                doc.setFont('helvetica', 'normal');
-                doc.text(n.nombre || '-', margin + 35, y);
 
-                y += 6;
-                doc.setFont('helvetica', 'bold');
-                doc.text("Nº Documento:", margin, y);
-                doc.setFont('helvetica', 'normal');
-                doc.text(n.documento || '-', margin + 35, y);
+                // Función auxiliar para imprimir filas ordenadas
+                const addPdfRow = (label, val) => {
+                    if (y > 270) { doc.addPage(); y = 20; }
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(15, 23, 42);
+                    doc.text(label, margin, y);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(40, 40, 40);
+                    doc.text(String(val || '-'), margin + 45, y);
+                    y += 6;
+                };
 
-                y += 6;
-                doc.setFont('helvetica', 'bold');
-                doc.text("Vehículo / Matrícula:", margin, y);
-                doc.setFont('helvetica', 'normal');
-                doc.text(`${n.vehiculo || '-'} [${n.matricula || '-'}]`, margin + 35, y);
+                const fechaIntervStr = n.fecha_intervencion ? formatFechaHora(n.fecha_intervencion) : (n.fecha_creacion || '-');
 
-                y += 6;
+                addPdfRow("Categoría:", (n.categoria || 'otro').toUpperCase());
+                addPdfRow("Fecha/Hora Intervención:", fechaIntervStr);
+                addPdfRow("Lugar de Intervención:", n.lugar);
+                addPdfRow("Nombre y Apellidos:", n.nombre);
+                addPdfRow("Nº Documento (DNI/NIE):", n.documento);
+                addPdfRow("Lugar de Nacimiento:", n.lugar_nac);
+                addPdfRow("Fecha de Nacimiento:", n.fecha_nac);
+                addPdfRow("Teléfono de Contacto:", n.telefono);
+                addPdfRow("Nombre de los Padres:", n.padres);
+                addPdfRow("Domicilio Completo:", n.domicilio);
+                addPdfRow("Vehículo Asociado:", n.vehiculo);
+                addPdfRow("Matrícula Vehículo:", n.matricula);
+
+                y += 2;
+                if (y > 250) { doc.addPage(); y = 20; }
                 doc.setFont('helvetica', 'bold');
-                doc.text("Hechos:", margin, y);
+                doc.setTextColor(15, 23, 42);
+                doc.text("Hechos / Detalle de Intervención:", margin, y);
+                y += 5;
                 doc.setFont('helvetica', 'normal');
-                const splitHechos = doc.splitTextToSize(n.hechos || 'Sin observaciones.', 180);
-                doc.text(splitHechos, margin, y + 5);
+                doc.setTextColor(40, 40, 40);
+
+                const splitHechos = doc.splitTextToSize(n.hechos || 'Sin datos de hechos registrados.', 180);
+                doc.text(splitHechos, margin, y);
 
                 y += (splitHechos.length * 5) + 10;
                 appendPhotosToPDF(doc, n.fotos, y, margin);
@@ -1872,60 +2034,57 @@
 
                 y += 12;
                 doc.setFontSize(9);
-                doc.text("Matrícula:", margin, y);
-                doc.setFont('helvetica', 'normal');
-                doc.text(v.matricula || '-', margin + 35, y);
 
-                y += 6;
-                doc.setFont('helvetica', 'bold');
-                doc.text("Marca / Modelo:", margin, y);
-                doc.setFont('helvetica', 'normal');
-                doc.text(`${v.marca || '-'} ${v.modelo || ''}`, margin + 35, y);
+                const addPdfRowV = (label, val) => {
+                    if (y > 270) { doc.addPage(); y = 20; }
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(15, 23, 42);
+                    doc.text(label, margin, y);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(40, 40, 40);
+                    doc.text(String(val || '-'), margin + 45, y);
+                    y += 6;
+                };
 
-                y += 6;
-                doc.setFont('helvetica', 'bold');
-                doc.text("Color:", margin, y);
-                doc.setFont('helvetica', 'normal');
-                doc.text(v.color || '-', margin + 35, y);
+                addPdfRowV("Matrícula:", v.matricula);
+                addPdfRowV("Marca / Modelo:", `${v.marca || '-'} ${v.modelo || ''}`);
+                addPdfRowV("Color:", v.color);
+                addPdfRowV("Número Bastidor (VIN):", v.vin);
+                addPdfRowV("Titular / Conductor:", v.titular);
+                addPdfRowV("Documento Titular:", v.documento_titular);
+                addPdfRowV("Fecha de Registro:", v.fecha_creacion);
 
-                y += 6;
+                y += 2;
+                if (y > 250) { doc.addPage(); y = 20; }
                 doc.setFont('helvetica', 'bold');
-                doc.text("Bastidor (VIN):", margin, y);
+                doc.setTextColor(15, 23, 42);
+                doc.text("Anotaciones / Observaciones:", margin, y);
+                y += 5;
                 doc.setFont('helvetica', 'normal');
-                doc.text(v.vin || '-', margin + 35, y);
+                doc.setTextColor(40, 40, 40);
 
-                y += 6;
-                doc.setFont('helvetica', 'bold');
-                doc.text("Titular / Conductor:", margin, y);
-                doc.setFont('helvetica', 'normal');
-                doc.text(`${v.titular || '-'} (${v.documento_titular || '-'})`, margin + 35, y);
-
-                y += 6;
-                doc.setFont('helvetica', 'bold');
-                doc.text("Anotaciones:", margin, y);
-                doc.setFont('helvetica', 'normal');
                 const splitAnot = doc.splitTextToSize(v.anotaciones || 'Sin anotaciones.', 180);
-                doc.text(splitAnot, margin, y + 5);
+                doc.text(splitAnot, margin, y);
 
                 y += (splitAnot.length * 5) + 10;
                 appendPhotosToPDF(doc, v.fotos, y, margin);
             }
 
-            const nombreArchivo = `filiame_export_${Date.now()}.pdf`;
+            const nombreArchivo = `filiame_informe_${Date.now()}.pdf`;
             doc.save(nombreArchivo);
         }
 
         function appendPhotosToPDF(doc, fotos, startY, margin) {
             if (!fotos || fotos.length === 0) return;
             let y = startY;
-            if (y > 220) { doc.addPage(); y = 20; }
+            if (y > 210) { doc.addPage(); y = 20; }
 
             doc.setFillColor(245, 247, 250);
             doc.rect(margin, y, 180, 8, 'F');
             doc.setTextColor(15, 23, 42);
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(10);
-            doc.text("REGISTRO FOTOGRÁFICO", margin + 3, y + 5.5);
+            doc.text("2. REGISTRO FOTOGRÁFICO Y ANEXOS", margin + 3, y + 5.5);
 
             y += 12;
             let photoX = margin;
@@ -1937,7 +2096,7 @@
                     photoX = margin;
                     y += photoHeight + 5;
                 }
-                if (y + photoHeight > 280) {
+                if (y + photoHeight > 270) {
                     doc.addPage();
                     y = 20;
                     photoX = margin;
