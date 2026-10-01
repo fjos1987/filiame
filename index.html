@@ -10,7 +10,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root {
-            /* Fondo ligeramente más claro sin perder el azul marino */
             --bg-gradient: radial-gradient(circle at 50% -20%, #22335e 0%, #0d152a 100%);
             --card-glass: rgba(25, 35, 60, 0.65);
             --card-border: rgba(224, 169, 109, 0.25);
@@ -152,10 +151,7 @@
         .home-card-info h3 { margin: 0; font-size: 0.98rem; font-weight: 700; color: #fff; }
         .home-card-info p { margin: 3px 0 0 0; font-size: 0.78rem; color: var(--text-muted); }
 
-        /* BOTÓN DE BORRAR TODO CENTRADO */
-        .btn-delete-all-wrapper {
-            display: flex; justify-content: center; margin-top: 40px; margin-bottom: 20px;
-        }
+        .btn-delete-all-wrapper { display: flex; justify-content: center; margin-top: 40px; margin-bottom: 20px; }
         .btn-delete-all {
             background: rgba(255, 82, 82, 0.12); color: var(--danger-red); border: 1px solid rgba(255, 82, 82, 0.3);
             padding: 5px 10px; border-radius: 8px; font-weight: 700; font-size: 0.68rem;
@@ -226,7 +222,7 @@
             padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; cursor: pointer; font-weight: 600;
         }
 
-        /* TARJETAS DE REGISTRO Y AVISOS */
+        /* TARJETAS DE REGISTRO */
         .card {
             background: var(--card-glass); border: 1px solid var(--border-subtle); border-radius: var(--radius-medium);
             padding: 14px 16px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden;
@@ -253,13 +249,9 @@
 
         .card-sub { font-size: 0.82rem; color: var(--text-muted); margin-top: 3px; }
 
-        /* ESTILOS BOTONES DE ESTADO DE AVISOS */
-        .aviso-top-bar {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-right: 32px;
-        }
-        .aviso-status-toggle {
-            display: flex; gap: 4px; background: rgba(0, 0, 0, 0.3); padding: 3px; border-radius: 8px; border: 1px solid var(--border-subtle);
-        }
+        /* ESTILOS AVISOS */
+        .aviso-top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-right: 32px; }
+        .aviso-status-toggle { display: flex; gap: 4px; background: rgba(0, 0, 0, 0.3); padding: 3px; border-radius: 8px; border: 1px solid var(--border-subtle); }
         .btn-status {
             border: none; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.72rem; cursor: pointer; transition: all 0.2s;
             color: rgba(255, 255, 255, 0.4); background: transparent;
@@ -290,10 +282,23 @@
         /* DETALLE */
         .detail-group { background: var(--card-glass); padding: 12px 14px; border-radius: var(--radius-medium); margin-bottom: 8px; border: 1px solid var(--border-subtle); }
         .detail-label { font-size: 0.75rem; color: var(--accent-gold); font-weight: 700; text-transform: uppercase; }
-        .detail-value { font-size: 0.95rem; color: var(--text-white); margin-top: 4px; word-break: break-word; }
+        .detail-value { font-size: 0.95rem; color: var(--text-white); margin-top: 4px; word-break: break-word; overflow-wrap: break-word; }
         .detail-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 10px; }
         .detail-gallery img { width: 100%; height: 110px; object-fit: cover; border-radius: var(--radius-medium); border: 1px solid var(--card-border); cursor: pointer; transition: transform 0.2s; }
         .detail-gallery img:hover { transform: scale(1.03); border-color: var(--accent-gold); }
+
+        /* ESTILOS DEL HISTORIAL DE ACTUACIONES EN FICHA DE PERSONA */
+        .actuacion-card {
+            background: rgba(12, 18, 32, 0.8); border: 1px solid var(--card-border);
+            border-radius: var(--radius-medium); padding: 12px; margin-top: 8px; position: relative;
+            word-break: break-word; overflow-wrap: break-word;
+        }
+        .actuacion-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-right: 80px; }
+        .actuacion-cat { font-size: 0.7rem; padding: 2px 6px; border-radius: 6px; font-weight: bold; text-transform: uppercase; }
+
+        .actuacion-actions {
+            position: absolute; top: 8px; right: 8px; display: flex; gap: 4px;
+        }
 
         .header-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
         .section-header-title { display: flex; align-items: center; gap: 10px; }
@@ -406,7 +411,7 @@
                 <div class="header-title">
                     <div class="section-header-title">
                         <div class="folder-icon-badge">
-                            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6-3.6z"/></svg>
                         </div>
                         <h2 class="section-title-text">Ajustes</h2>
                     </div>
@@ -465,7 +470,6 @@
                     <button class="btn-inline" style="padding: 8px 12px;" id="btn-add-record" onclick="handleAddNewRecord()">➕ Añadir</button>
                 </div>
 
-                <!-- SUB-PESTAÑAS -->
                 <div class="tabs-header">
                     <button id="tab-personas" class="tab-btn active" onclick="switchRecordTab('personas')">👥 Personas</button>
                     <button id="tab-vehiculos" class="tab-btn" onclick="switchRecordTab('vehiculos')">🚘 Vehículos</button>
@@ -491,11 +495,11 @@
                 <div id="avisos-list"></div>
             </div>
 
-            <!-- 5. FORMULARIO PERSONAS (IDENTIFICACIONES) -->
+            <!-- 5. FORMULARIO PERSONAS (FICHA DE DATOS FIJOS) -->
             <div id="screen-form" class="screen">
                 <div class="header-title">
                     <button class="btn-back" onclick="showScreen('screen-archive')">← Volver</button>
-                    <h2 id="form-title" class="section-title-text">Nueva Nota</h2>
+                    <h2 id="form-title" class="section-title-text">Nueva Ficha de Persona</h2>
                     <div></div>
                 </div>
 
@@ -503,25 +507,6 @@
                     <input type="hidden" id="note-id">
 
                     <div class="form-section">
-                        <div class="label">🏷️ Categoría de Intervención</div>
-                        <select id="categoria">
-                            <option value="identificacion">Identificación</option>
-                            <option value="trafico">Tráfico</option>
-                            <option value="incidencia">Incidencia</option>
-                            <option value="alarma">Alarma / Alerta</option>
-                            <option value="seguridad">Seguridad Ciudadana</option>
-                            <option value="otro">Otro</option>
-                        </select>
-
-                        <div class="label">🕒 Fecha y Hora de la Intervención</div>
-                        <input type="datetime-local" id="fecha_intervencion">
-
-                        <div class="label">
-                            📍 Lugar de intervención
-                            <button type="button" class="btn-inline" onclick="getGPSLocation('lugar')">📍 GPS</button>
-                        </div>
-                        <input type="text" id="lugar" placeholder="Lugar, calle o número exacto">
-
                         <div class="label">👤 Nombre y apellidos</div>
                         <input type="text" id="nombre" placeholder="Nombre completo" required>
 
@@ -557,7 +542,7 @@
 
                         <div class="row">
                             <div class="col">
-                                <div class="label">🚘 Vehículo</div>
+                                <div class="label">🚘 Vehículo Habitual</div>
                                 <input type="text" id="vehiculo" placeholder="Marca/Modelo">
                             </div>
                             <div class="col">
@@ -579,19 +564,13 @@
                             <div id="ocr-loading-person" class="ocr-loading">⏳ Escaneando documento / imagen con OCR...</div>
                             <div id="gallery-container-person" class="gallery-grid"></div>
                         </div>
-
-                        <div class="label">
-                            📝 Hechos
-                            <button type="button" class="btn-inline" onclick="startVoiceDictation('hechos')">🎙️ Dictar</button>
-                        </div>
-                        <textarea id="hechos" placeholder="Detalles de la intervención..."></textarea>
                     </div>
 
-                    <button type="button" class="btn-primary" onclick="saveNote()">Guardar Registro</button>
+                    <button type="button" class="btn-primary" onclick="saveNote()">Guardar Ficha de Persona</button>
                 </form>
             </div>
 
-            <!-- 6. FORMULARIO NUEVO/EDITAR VEHÍCULO (CON COLOR Y VIN) -->
+            <!-- 6. FORMULARIO NUEVO/EDITAR VEHÍCULO -->
             <div id="screen-form-vehiculo" class="screen">
                 <div class="header-title">
                     <button class="btn-back" onclick="showScreen('screen-archive')">← Volver</button>
@@ -661,7 +640,7 @@
                 </form>
             </div>
 
-            <!-- 7. DETALLE DE REGISTRO (PERSONA O VEHÍCULO) -->
+            <!-- 7. DETALLE DE REGISTRO (PERSONA CON HISTORIAL O VEHÍCULO) -->
             <div id="screen-detail" class="screen">
                 <div class="header-title">
                     <button class="btn-back" onclick="showScreen('screen-archive')">← Volver</button>
@@ -673,8 +652,8 @@
 
                 <button class="btn-whatsapp" id="btn-share-wa" onclick="shareWhatsApp()">💬 Compartir en WhatsApp</button>
                 <button class="btn-action" id="btn-export-pdf" onclick="exportPDF()">📄 Descargar PDF</button>
-                <button class="btn-primary" id="btn-edit-detail" onclick="editCurrentRecord()">✏️ Editar Registro</button>
-                <button class="btn-danger" id="btn-delete-detail" onclick="deleteCurrentRecord()">🗑️ Eliminar Registro</button>
+                <button class="btn-primary" id="btn-edit-detail" onclick="editCurrentRecord()">✏️️ Editar Ficha Base</button>
+                <button class="btn-danger" id="btn-delete-detail" onclick="deleteCurrentRecord()">🗑️ Eliminar Ficha Completa</button>
             </div>
 
         </div>
@@ -695,6 +674,42 @@
             </button>
         </div>
 
+    </div>
+
+    <!-- MODAL NUEVA / EDITAR ACTUACIÓN POLICIAL (SUB-FICHA) -->
+    <div id="modal-actuacion" class="modal-overlay">
+        <div class="modal-content">
+            <button class="lightbox-close" style="position:absolute; top:15px; right:15px;" onclick="closeActuacionModal()">✕</button>
+            <h3 id="actuacion-modal-title" style="margin-top:0; color:var(--accent-gold); font-size:1.1rem; text-transform:uppercase;">🚨 Registrar Actuación</h3>
+            <input type="hidden" id="actuacion_id">
+
+            <div class="label">🏷️ Categoría / Motivo</div>
+            <select id="actuacion_categoria">
+                <option value="identificacion">Identificación</option>
+                <option value="trafico">Tráfico</option>
+                <option value="incidencia">Incidencia</option>
+                <option value="alarma">Alarma / Alerta</option>
+                <option value="seguridad">Seguridad Ciudadana</option>
+                <option value="otro">Otro</option>
+            </select>
+
+            <div class="label">🕒 Fecha y Hora de la Intervención</div>
+            <input type="datetime-local" id="actuacion_fecha">
+
+            <div class="label">
+                📍 Lugar de Intervención
+                <button type="button" class="btn-inline" onclick="getGPSLocation('actuacion_lugar')">📍 GPS</button>
+            </div>
+            <input type="text" id="actuacion_lugar" placeholder="Lugar, calle o punto exacto">
+
+            <div class="label">
+                📝 Hechos / Detalles de la Actuación
+                <button type="button" class="btn-inline" onclick="startVoiceDictation('actuacion_hechos')">🎙️ Dictar</button>
+            </div>
+            <textarea id="actuacion_hechos" placeholder="Describe detalladamente la intervención policial..."></textarea>
+
+            <button class="btn-primary" onclick="saveActuacionModal()">Guardar Actuación</button>
+        </div>
     </div>
 
     <!-- MODAL NUEVO / EDITAR AVISO TELEFÓNICO -->
@@ -790,7 +805,7 @@
         /* INDEXEDDB */
         function openDB() {
             return new Promise((resolve, reject) => {
-                const req = indexedDB.open("FiliameDB", 3);
+                const req = indexedDB.open("FiliameDB", 4);
                 req.onupgradeneeded = (e) => {
                     const db = e.target.result;
                     if (!db.objectStoreNames.contains("handles")) db.createObjectStore("handles");
@@ -843,9 +858,28 @@
             } catch (e) { return null; }
         }
 
-        /* CARGA INICIAL */
+        /* CARGA INICIAL Y MIGRACIÓN AUTOMÁTICA A FORMATO HISTORIAL */
         window.addEventListener('load', async () => {
-            notes = (await getIDBData('id_notes')) || [];
+            let rawNotes = (await getIDBData('id_notes')) || [];
+            
+            // Migración de la estructura antigua a Ficha Limpia con Historial de Actuaciones
+            notes = rawNotes.map(n => {
+                if (!n.actuaciones) {
+                    n.actuaciones = [];
+                    // Si el registro antiguo contenía información de intervención la pasamos al historial
+                    if (n.hechos || n.categoria || n.lugar || n.fecha_intervencion) {
+                        n.actuaciones.push({
+                            id: Date.now().toString() + "_" + Math.random().toString(36).substring(2, 5),
+                            categoria: n.categoria || 'identificacion',
+                            fecha: n.fecha_intervencion || (n.fecha_creacion ? new Date(n.fecha_creacion).toISOString().slice(0, 16) : ''),
+                            lugar: n.lugar || '',
+                            hechos: n.hechos || ''
+                        });
+                    }
+                }
+                return n;
+            });
+
             vehiculos = (await getIDBData('id_vehiculos')) || [];
             avisos = (await getIDBData('id_avisos')) || [];
 
@@ -1001,7 +1035,7 @@
                     (n.nombre && n.nombre.toLowerCase().includes(term)) ||
                     (n.documento && n.documento.toLowerCase().includes(term)) ||
                     (n.matricula && n.matricula.toLowerCase().includes(term)) ||
-                    (n.lugar && n.lugar.toLowerCase().includes(term))
+                    (n.actuaciones && n.actuaciones.some(a => (a.lugar && a.lugar.toLowerCase().includes(term)) || (a.hechos && a.hechos.toLowerCase().includes(term))))
                 );
                 renderNotes(filtered);
             } else {
@@ -1024,6 +1058,345 @@
             } else {
                 openNewVehiculo();
             }
+        }
+
+        /* GESTIÓN DE FICHA DE PERSONA */
+        function openNewNote() {
+            currentNoteId = null;
+            currentPhotosPerson = [];
+            document.getElementById('note-form').reset();
+            document.getElementById('note-id').value = '';
+            document.getElementById('form-title').innerText = "Nueva Ficha de Persona";
+            document.getElementById('reincidencia-alert').style.display = 'none';
+
+            renderGallery('person');
+            showScreen('screen-form');
+        }
+
+        function editCurrentRecord() {
+            if (currentDetailType === 'person') {
+                const n = notes.find(item => String(item.id) === String(currentNoteId));
+                if (!n) return;
+
+                document.getElementById('form-title').innerText = "Editar Persona";
+                document.getElementById('note-id').value = n.id;
+                document.getElementById('nombre').value = n.nombre || '';
+                document.getElementById('documento').value = n.documento || '';
+                document.getElementById('lugar_nac').value = n.lugar_nac || '';
+                document.getElementById('fecha_nac').value = n.fecha_nac || '';
+                document.getElementById('telefono').value = n.telefono || '';
+                document.getElementById('padres').value = n.padres || '';
+                document.getElementById('domicilio').value = n.domicilio || '';
+                document.getElementById('vehiculo').value = n.vehiculo || '';
+                document.getElementById('matricula').value = n.matricula || '';
+
+                currentPhotosPerson = [...(n.fotos || [])];
+                renderGallery('person');
+                showScreen('screen-form');
+            } else {
+                const v = vehiculos.find(item => String(item.id) === String(currentVehiculoId));
+                if (!v) return;
+
+                document.getElementById('form-vehiculo-title').innerText = "Editar Vehículo";
+                document.getElementById('vehiculo-id').value = v.id;
+                document.getElementById('v_matricula').value = v.matricula || '';
+                document.getElementById('v_color').value = v.color || '';
+                document.getElementById('v_marca').value = v.marca || '';
+                document.getElementById('v_modelo').value = v.modelo || '';
+                document.getElementById('v_vin').value = v.vin || '';
+                document.getElementById('v_titular').value = v.titular || '';
+                document.getElementById('v_documento_titular').value = v.documento_titular || '';
+                document.getElementById('v_anotaciones').value = v.anotaciones || '';
+
+                currentPhotosVehicle = [...(v.fotos || [])];
+                renderGallery('vehicle');
+                showScreen('screen-form-vehiculo');
+            }
+        }
+
+        function checkReincidencia() {
+            const doc = document.getElementById('documento').value.trim().toUpperCase();
+            const mat = document.getElementById('matricula').value.trim().toUpperCase();
+            const alertDiv = document.getElementById('reincidencia-alert');
+
+            if (!doc && !mat) {
+                alertDiv.style.display = 'none';
+                return;
+            }
+
+            const matches = notes.filter(n => {
+                if (n.id === currentNoteId) return false;
+                const matchDoc = doc && n.documento && n.documento.toUpperCase() === doc;
+                const matchMat = mat && n.matricula && n.matricula.toUpperCase() === mat;
+                return matchDoc || matchMat;
+            });
+
+            if (matches.length > 0) {
+                alertDiv.style.display = 'block';
+                alertDiv.innerHTML = `⚠️ <strong>ALERTA DE REINCIDENCIA:</strong> Se han hallado ${matches.length} registro(s) previo(s) con este documento o vehículo.`;
+            } else {
+                alertDiv.style.display = 'none';
+            }
+        }
+
+        async function saveNote() {
+            const nombre = document.getElementById('nombre').value.trim();
+            if (!nombre) {
+                alert("Por favor introduce un nombre.");
+                return;
+            }
+
+            const existingNote = currentNoteId ? notes.find(n => String(n.id) === String(currentNoteId)) : null;
+
+            const personData = {
+                id: currentNoteId || Date.now().toString(),
+                fecha_creacion: existingNote ? existingNote.fecha_creacion : new Date().toLocaleString('es-ES'),
+                nombre: nombre,
+                documento: document.getElementById('documento').value.trim().toUpperCase(),
+                lugar_nac: document.getElementById('lugar_nac').value.trim(),
+                fecha_nac: document.getElementById('fecha_nac').value.trim(),
+                telefono: document.getElementById('telefono').value.trim(),
+                padres: document.getElementById('padres').value.trim(),
+                domicilio: document.getElementById('domicilio').value.trim(),
+                vehiculo: document.getElementById('vehiculo').value.trim(),
+                matricula: document.getElementById('matricula').value.trim().toUpperCase(),
+                fotos: [...currentPhotosPerson],
+                actuaciones: existingNote ? (existingNote.actuaciones || []) : []
+            };
+
+            if (currentNoteId) {
+                notes = notes.map(n => String(n.id) === String(currentNoteId) ? personData : n);
+            } else {
+                notes.unshift(personData);
+            }
+
+            await saveIDBData('id_notes', notes);
+            await saveToLocalFolder();
+
+            showScreen('screen-archive');
+        }
+
+        function renderNotes(list) {
+            const container = document.getElementById('records-list');
+            container.innerHTML = "";
+
+            if (!list || list.length === 0) {
+                container.innerHTML = `<div style="text-align:center; color: var(--text-muted); padding:20px;">No hay personas registradas.</div>`;
+                return;
+            }
+
+            list.forEach(n => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.onclick = () => viewPersonDetail(n.id);
+
+                const numActuaciones = n.actuaciones ? n.actuaciones.length : 0;
+                const ultActuacion = numActuaciones > 0 ? n.actuaciones[0] : null;
+
+                card.innerHTML = `
+                    <button class="btn-delete-card" title="Eliminar persona" data-id="${n.id}">
+                        🗑️
+                    </button>
+                    <div class="card-header-row">
+                        <span class="card-title">👤 ${n.nombre}</span>
+                        <span class="badge-cat cat-identificacion">PERSONA</span>
+                    </div>
+                    <div class="card-sub" style="color:#fff; font-weight:600; margin-top:2px;">🪪 ${n.documento || 'SIN DOCUMENTO'} | 📞 ${n.telefono || 'N/A'}</div>
+                    <div class="card-sub">🚘 ${n.vehiculo || 'Sin vehículo'} ${n.matricula ? '(' + n.matricula + ')' : ''}</div>
+                    <div class="card-sub" style="color:var(--accent-gold); font-weight:bold; margin-top:4px;">🚨 Antecedentes/Actuaciones: ${numActuaciones} registrada(s)</div>
+                    ${ultActuacion ? `<div class="card-sub" style="font-size:0.75rem; color:#cbd5e1;">Última: ${formatFechaHora(ultActuacion.fecha)} - ${ultActuacion.lugar || 'Lugar N/A'}</div>` : ''}
+                `;
+
+                const deleteBtn = card.querySelector('.btn-delete-card');
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deletePersonDirect(n.id, n.nombre);
+                });
+
+                container.appendChild(card);
+            });
+        }
+
+        async function deletePersonDirect(id, nombre) {
+            if (confirm(`¿Deseas eliminar la ficha completa de "${nombre}"?`)) {
+                notes = notes.filter(n => String(n.id) !== String(id));
+                await saveIDBData('id_notes', notes);
+                await saveToLocalFolder();
+                filterCurrentTab();
+            }
+        }
+
+        /* VISTA DETALLADA DE PERSONA CON HISTORIAL DE ACTUACIONES */
+        function viewPersonDetail(id) {
+            currentNoteId = id;
+            currentDetailType = 'person';
+            const n = notes.find(item => String(item.id) === String(id));
+            if (!n) return;
+
+            document.getElementById('detail-header-title').innerText = "Ficha de Persona";
+
+            const container = document.getElementById('detail-content');
+            let photosHTML = "";
+
+            if (n.fotos && n.fotos.length > 0) {
+                photosHTML = `<div class="detail-label" style="margin-top:12px;">📷 Fotografía(s) (Haz clic para zoom)</div>
+                <div class="detail-gallery">
+                    ${n.fotos.map(f => `<img src="${f}" onclick="openLightbox('${f}')">`).join('')}
+                </div>`;
+            }
+
+            let actuacionesHTML = "";
+            if (n.actuaciones && n.actuaciones.length > 0) {
+                actuacionesHTML = n.actuaciones.map((a) => {
+                    const catClass = getCatBadgeClass(a.categoria);
+                    const catLabel = getCatLabel(a.categoria);
+                    return `
+                        <div class="actuacion-card">
+                            <div class="actuacion-header">
+                                <span class="badge-cat ${catClass}">${catLabel}</span>
+                                <span style="font-size:0.75rem; color:var(--text-muted);">🕒 ${formatFechaHora(a.fecha)}</span>
+                            </div>
+                            <div style="font-size:0.85rem; color:#fff; font-weight:600; margin-top:4px;">📍 Lugar: ${a.lugar || 'No especificado'}</div>
+                            <div style="font-size:0.85rem; color:#cbd5e1; margin-top:4px; white-space:pre-wrap;">📝 <strong>Hechos:</strong> ${a.hechos || 'Sin detalles.'}</div>
+                            <div class="actuacion-actions">
+                                <button class="btn-inline" title="Editar actuación" onclick="openActuacionModal('${n.id}', '${a.id}')">✏️</button>
+                                <button class="btn-inline" style="background:rgba(255,82,82,0.2); color:var(--danger-red); border-color:rgba(255,82,82,0.3);" title="Eliminar actuación" onclick="deleteActuacion('${n.id}', '${a.id}')">🗑</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                actuacionesHTML = `<div style="font-size:0.85rem; color:var(--text-muted); margin-top:6px; font-style:italic;">No hay intervenciones/actuaciones registradas.</div>`;
+            }
+
+            container.innerHTML = `
+                <div class="detail-group"><div class="detail-label">👤 Nombre Completo</div><div class="detail-value" style="font-size:1.15rem; font-weight:bold; color:var(--accent-gold);">${n.nombre || '-'}</div></div>
+                <div class="detail-group"><div class="detail-label">🪪 Nº Documento</div><div class="detail-value">${n.documento || '-'}</div></div>
+                <div class="detail-group"><div class="detail-label">🌍 Lugar y Fecha Nacimiento</div><div class="detail-value">${n.lugar_nac || '-'} ${n.fecha_nac ? '(' + n.fecha_nac + ')' : ''}</div></div>
+                <div class="detail-group"><div class="detail-label">📞 Teléfono</div><div class="detail-value">${n.telefono || '-'}</div></div>
+                <div class="detail-group"><div class="detail-label">👨‍👩‍👦 Padres</div><div class="detail-value">${n.padres || '-'}</div></div>
+                <div class="detail-group"><div class="detail-label">🏠 Domicilio</div><div class="detail-value">${n.domicilio || '-'}</div></div>
+                <div class="detail-group"><div class="detail-label">🚘 Vehículo / Matrícula</div><div class="detail-value">${n.vehiculo || '-'} ${n.matricula ? '[' + n.matricula + ']' : ''}</div></div>
+                ${photosHTML}
+
+                <div class="detail-group" style="margin-top:15px; border-color:var(--card-border-glow);">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div class="detail-label" style="font-size:0.85rem; color:var(--accent-gold);">🚨 HISTORIAL DE ACTUACIONES / ANTECEDENTES</div>
+                        <button class="btn-inline" onclick="openActuacionModal('${n.id}')">➕ Nueva Actuación</button>
+                    </div>
+                    <div style="margin-top:10px;">
+                        ${actuacionesHTML}
+                    </div>
+                </div>
+            `;
+
+            showScreen('screen-detail');
+        }
+
+        /* MODAL Y GESTIÓN DE SUB-FICHA DE ACTUACIONES */
+        function openActuacionModal(personId, actuacionId = null) {
+            currentNoteId = personId;
+            const n = notes.find(item => String(item.id) === String(personId));
+
+            if (actuacionId && n && n.actuaciones) {
+                const a = n.actuaciones.find(item => String(item.id) === String(actuacionId));
+                if (a) {
+                    document.getElementById('actuacion-modal-title').innerText = "✏️ Editar Actuación";
+                    document.getElementById('actuacion_id').value = a.id;
+                    document.getElementById('actuacion_categoria').value = a.categoria || 'identificacion';
+                    document.getElementById('actuacion_fecha').value = a.fecha || '';
+                    document.getElementById('actuacion_lugar').value = a.lugar || '';
+                    document.getElementById('actuacion_hechos').value = a.hechos || '';
+                }
+            } else {
+                document.getElementById('actuacion-modal-title').innerText = "🚨 Registrar Actuación";
+                document.getElementById('actuacion_id').value = '';
+                document.getElementById('actuacion_categoria').value = 'identificacion';
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                document.getElementById('actuacion_fecha').value = now.toISOString().slice(0, 16);
+                document.getElementById('actuacion_lugar').value = '';
+                document.getElementById('actuacion_hechos').value = '';
+            }
+
+            document.getElementById('modal-actuacion').classList.add('active');
+        }
+
+        function closeActuacionModal() {
+            document.getElementById('modal-actuacion').classList.remove('active');
+        }
+
+        async function saveActuacionModal() {
+            if (!currentNoteId) return;
+
+            const n = notes.find(item => String(item.id) === String(currentNoteId));
+            if (!n) return;
+
+            const actId = document.getElementById('actuacion_id').value;
+
+            const actuacionData = {
+                id: actId || Date.now().toString(),
+                categoria: document.getElementById('actuacion_categoria').value,
+                fecha: document.getElementById('actuacion_fecha').value,
+                lugar: document.getElementById('actuacion_lugar').value.trim(),
+                hechos: document.getElementById('actuacion_hechos').value.trim()
+            };
+
+            if (!n.actuaciones) n.actuaciones = [];
+
+            if (actId) {
+                n.actuaciones = n.actuaciones.map(a => String(a.id) === String(actId) ? actuacionData : a);
+            } else {
+                n.actuaciones.unshift(actuacionData);
+            }
+
+            await saveIDBData('id_notes', notes);
+            await saveToLocalFolder();
+
+            closeActuacionModal();
+            viewPersonDetail(currentNoteId);
+        }
+
+        async function deleteActuacion(personId, actuacionId) {
+            if (confirm("¿Deseas eliminar esta actuación policial del historial?")) {
+                const n = notes.find(item => String(item.id) === String(personId));
+                if (n && n.actuaciones) {
+                    n.actuaciones = n.actuaciones.filter(a => String(a.id) !== String(actuacionId));
+                    await saveIDBData('id_notes', notes);
+                    await saveToLocalFolder();
+                    viewPersonDetail(personId);
+                }
+            }
+        }
+
+        function getCatBadgeClass(cat) {
+            switch(cat) {
+                case 'identificacion': return 'cat-identificacion';
+                case 'trafico': return 'cat-trafico';
+                case 'incidencia': return 'cat-incidencia';
+                case 'alarma': return 'cat-alarma';
+                case 'seguridad': return 'cat-seguridad';
+                default: return 'cat-otro';
+            }
+        }
+
+        function getCatLabel(cat) {
+            switch(cat) {
+                case 'identificacion': return 'Identificación';
+                case 'trafico': return 'Tráfico';
+                case 'incidencia': return 'Incidencia';
+                case 'alarma': return 'Alarma/Alerta';
+                case 'seguridad': return 'Seguridad Ciudadana';
+                default: return 'Otro';
+            }
+        }
+
+        function formatFechaHora(isoStr) {
+            if (!isoStr) return 'N/A';
+            try {
+                const d = new Date(isoStr);
+                return d.toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            } catch(e) { return isoStr; }
         }
 
         /* GESTIÓN DE VEHÍCULOS */
@@ -1117,7 +1490,7 @@
                         <span class="card-title">🚘 ${matMostrar}</span>
                         <span class="badge-cat cat-trafico">VEHÍCULO</span>
                     </div>
-                    <div class="card-sub" style="color:#fff; font-weight:600; margin-top:2px;">🏎️ ${descVehiculo}${colorMostrar}</div>
+                    <div class="card-sub" style="color:#fff; font-weight:600; margin-top:2px;">🏎 ${descVehiculo}${colorMostrar}</div>
                     <div class="card-sub">👤 Titular/Conductor: ${v.titular || 'N/A'} ${v.documento_titular ? '(' + v.documento_titular + ')' : ''}</div>
                     <div class="card-sub" style="font-size: 0.75rem; margin-top: 4px;">📅 Registrado: ${v.fecha_creacion || ''} ${v.fotos && v.fotos.length ? '📸 (' + v.fotos.length + ')' : ''}</div>
                 `;
@@ -1172,6 +1545,17 @@
             `;
 
             showScreen('screen-detail');
+        }
+
+        function deleteCurrentRecord() {
+            if (currentDetailType === 'person') {
+                const n = notes.find(item => String(item.id) === String(currentNoteId));
+                if (n) deletePersonDirect(n.id, n.nombre);
+            } else {
+                const v = vehiculos.find(item => String(item.id) === String(currentVehiculoId));
+                if (v) deleteVehiculoDirect(v.id, v.matricula);
+            }
+            showScreen('screen-archive');
         }
 
         /* BORRADO ABSOLUTO */
@@ -1316,7 +1700,7 @@
 
                 card.innerHTML = `
                     <button class="btn-delete-card" title="Eliminar aviso" onclick="event.stopPropagation(); deleteAviso('${a.id}')">
-                        🗑️
+                        🗑
                     </button>
                     <div class="aviso-top-bar" onclick="event.stopPropagation();">
                         <div class="aviso-status-toggle">
@@ -1408,7 +1792,7 @@
                     <img src="${imgBase64}" alt="Foto ${index + 1}" onclick="openLightbox('${imgBase64}')">
                     <div class="gallery-actions">
                         <button type="button" class="gallery-btn" title="Escanear OCR" onclick="scanTextFromImageIndex(${index}, '${type}')">🔍 OCR</button>
-                        <button type="button" class="gallery-btn" title="Eliminar" onclick="removePhotoIndex(${index}, '${type}')" style="color:var(--danger-red);">🗑️</button>
+                        <button type="button" class="gallery-btn" title="Eliminar" onclick="removePhotoIndex(${index}, '${type}')" style="color:var(--danger-red);">🗑️️</button>
                     </div>
                 `;
                 container.appendChild(item);
@@ -1486,7 +1870,6 @@
 
             window.addEventListener('mouseup', () => { isDragging = false; });
 
-            // Eventos Táctiles (Móviles)
             viewport.addEventListener('touchstart', (e) => {
                 if (e.touches.length === 1 && zoomScale > 1) {
                     isDragging = true;
@@ -1498,14 +1881,13 @@
             viewport.addEventListener('touchmove', (e) => {
                 if (isDragging && e.touches.length === 1) {
                     zoomPosX = e.touches[0].clientX - startX;
-                    zoomPosY = e.touches[0].clientY - startY;
+                    zoomPosY = e.clientY - startY;
                     updateImgTransform();
                 }
             });
 
             viewport.addEventListener('touchend', () => { isDragging = false; });
 
-            // Zoom con Rueda del Ratón
             viewport.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 if (e.deltaY < 0) zoomIn();
@@ -1584,547 +1966,357 @@
 
         function parseNameAdvanced(text) {
             const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-            let apellidos = [];
-            let nombre = "";
-            let capturingApellidos = false;
-            let capturingNombre = false;
-
             for (let i = 0; i < lines.length; i++) {
-                const lineClean = lines[i].toUpperCase().replace(/[^A-ZÁÉÍÓÚÑ\s]/g, '').trim();
-
-                if (lineClean.includes("APELLIDO") || lineClean.includes("SURNAME")) {
-                    capturingApellidos = true; capturingNombre = false; continue;
-                }
-                if (lineClean.includes("NOMBRE") || lineClean.includes("GIVEN NAME")) {
-                    capturingApellidos = false; capturingNombre = true; continue;
-                }
-                if (lineClean.includes("SEXO") || lineClean.includes("SEX") || lineClean.includes("NACIONALIDAD") || lineClean.includes("EMISION")) {
-                    capturingApellidos = false; capturingNombre = false;
-                }
-                if (capturingApellidos && lineClean.length > 1 && !lineClean.includes("REINO") && !lineClean.includes("DOCUMENTO")) {
-                    apellidos.push(lineClean);
-                }
-                if (capturingNombre && lineClean.length > 1 && !nombre) {
-                    nombre = lineClean;
+                if (lines[i].toUpperCase().includes("NOMBRE") || lines[i].toUpperCase().includes("APELLIDOS")) {
+                    if (lines[i+1]) return lines[i+1];
                 }
             }
-
-            if (nombre || apellidos.length > 0) return `${nombre} ${apellidos.join(' ')}`.trim();
             return null;
         }
 
         function parseDOBAdvanced(text) {
-            const cleanText = text.replace(/,/g, '.');
-            const lines = cleanText.split('\n').map(l => l.trim());
-
-            for (let l of lines) {
-                const upperLine = l.toUpperCase();
-                if (upperLine.includes("NAC") || upperLine.includes("BIRTH") || upperLine.includes("FECHA")) {
-                    const match = l.match(/(\d{2}[\/\.-]\d{2}[\/\.-]\d{4})/);
-                    if (match) return match[0].replace(/[\.-]/g, '/');
-                }
-            }
-            const globalMatch = cleanText.match(/\b(\d{2})[\/\.-](\d{2})[\/\.-](\d{4})\b/);
-            if (globalMatch) return `${globalMatch[1]}/${globalMatch[2]}/${globalMatch[3]}`;
-            return null;
+            const match = text.match(/([0-3][0-9])[\/\.-]([0-1][0-9])[\/\.-](19|20)[0-9]{2}/);
+            return match ? match[0] : null;
         }
 
-        /* HERRAMIENTAS */
-        function checkReincidencia() {
-            const doc = document.getElementById('documento').value.trim().toUpperCase();
-            const mat = document.getElementById('matricula').value.trim().toUpperCase();
-            const alertDiv = document.getElementById('reincidencia-alert');
-
-            if (!doc && !mat) {
-                alertDiv.style.display = 'none';
-                return;
-            }
-
-            const matches = notes.filter(n => 
-                (doc && n.documento && n.documento.toUpperCase() === doc && n.id !== currentNoteId) ||
-                (mat && n.matricula && n.matricula.toUpperCase() === mat && n.id !== currentNoteId)
-            );
-
-            if (matches.length > 0) {
-                alertDiv.style.display = 'block';
-                alertDiv.innerHTML = `⚠️ <strong>ALERTA DE REINCIDENCIA:</strong> Se encontraron ${matches.length} registro(s) previo(s).`;
+        /* UBICACIÓN GPS Y DICTADO POR VOZ */
+        function getGPSLocation(targetInputId) {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const lat = position.coords.latitude.toFixed(6);
+                    const lon = position.coords.longitude.toFixed(6);
+                    const input = document.getElementById(targetInputId);
+                    if (input) {
+                        input.value = `${lat}, ${lon}`;
+                    }
+                }, () => {
+                    alert("No se pudo obtener la ubicación GPS.");
+                });
             } else {
-                alertDiv.style.display = 'none';
+                alert("Geolocalización no soportada en este dispositivo.");
             }
         }
 
-        function getGPSLocation(targetId) {
-            if (!navigator.geolocation) {
-                alert("Geolocalización no soportada.");
+        function startVoiceDictation(targetInputId) {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                alert("El dictado por voz no es compatible con este navegador.");
                 return;
             }
-            const input = document.getElementById(targetId);
-            input.value = "Obteniendo ubicación...";
-
-            navigator.geolocation.getCurrentPosition(
-                async (pos) => {
-                    const lat = pos.coords.latitude;
-                    const lon = pos.coords.longitude;
-                    try {
-                        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
-                        const data = await response.json();
-                        if (data && data.address) {
-                            const road = data.address.road || data.address.pedestrian || "";
-                            const houseNumber = data.address.house_number ? `, Nº ${data.address.house_number}` : "";
-                            const city = data.address.city || data.address.town || "";
-                            input.value = road ? `${road}${houseNumber}${city ? ' (' + city + ')' : ''}` : `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
-                        } else { input.value = `${lat.toFixed(5)}, ${lon.toFixed(5)}`; }
-                    } catch (err) { input.value = `${lat.toFixed(5)}, ${lon.toFixed(5)}`; }
-                },
-                () => { alert("No se pudo obtener la ubicación GPS."); input.value = ""; }
-            );
-        }
-
-        function startVoiceDictation(targetId) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                alert("El dictado por voz no es compatible.");
-                return;
-            }
             const recognition = new SpeechRecognition();
             recognition.lang = 'es-ES';
-            recognition.onresult = (event) => {
+            recognition.interimResults = false;
+
+            recognition.onresult = function(event) {
                 const text = event.results[0][0].transcript;
-                const field = document.getElementById(targetId);
-                field.value = field.value ? field.value + " " + text : text;
+                const input = document.getElementById(targetInputId);
+                if (input) {
+                    input.value = input.value ? input.value + ' ' + text : text;
+                }
             };
             recognition.start();
         }
 
-        /* GESTIÓN DE IDENTIFICACIONES / PERSONAS */
-        function openNewNote() {
-            currentNoteId = null;
-            currentPhotosPerson = [];
-            document.getElementById('note-form').reset();
-            document.getElementById('note-id').value = '';
-            document.getElementById('form-title').innerText = "Nueva Nota";
-            document.getElementById('reincidencia-alert').style.display = 'none';
+        /* EXPORTAR COMPROBANTE EN PDF */
+        async function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
 
-            const now = new Date();
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            document.getElementById('fecha_intervencion').value = now.toISOString().slice(0, 16);
-
-            renderGallery('person');
-            showScreen('screen-form');
-        }
-
-        async function saveNote() {
-            const nombre = document.getElementById('nombre').value.trim();
-            if (!nombre) {
-                alert("Por favor introduce un nombre.");
-                return;
-            }
-
-            const noteData = {
-                id: currentNoteId || Date.now().toString(),
-                fecha_creacion: new Date().toLocaleString('es-ES'),
-                fecha_intervencion: document.getElementById('fecha_intervencion').value,
-                categoria: document.getElementById('categoria').value || 'otro',
-                lugar: document.getElementById('lugar').value,
-                nombre: nombre,
-                documento: document.getElementById('documento').value,
-                lugar_nac: document.getElementById('lugar_nac').value,
-                fecha_nac: document.getElementById('fecha_nac').value,
-                telefono: document.getElementById('telefono').value,
-                padres: document.getElementById('padres').value,
-                domicilio: document.getElementById('domicilio').value,
-                vehiculo: document.getElementById('vehiculo').value,
-                matricula: document.getElementById('matricula').value,
-                hechos: document.getElementById('hechos').value,
-                fotos: [...currentPhotosPerson]
-            };
-
-            if (currentNoteId) {
-                notes = notes.map(n => n.id === currentNoteId ? noteData : n);
-            } else {
-                notes.unshift(noteData);
-            }
-
-            await saveIDBData('id_notes', notes);
-            await saveToLocalFolder();
-
-            showScreen('screen-archive');
-        }
-
-        function formatFechaHora(isoStr) {
-            if (!isoStr) return '';
-            const d = new Date(isoStr);
-            if (isNaN(d.getTime())) return isoStr;
-            return d.toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
-        }
-
-        function renderNotes(list) {
-            const container = document.getElementById('records-list');
-            container.innerHTML = "";
-
-            if (!list || list.length === 0) {
-                container.innerHTML = `<div style="text-align:center; color: var(--text-muted); padding:20px;">No hay registros guardados.</div>`;
-                return;
-            }
-
-            list.forEach(n => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.onclick = () => viewDetail(n.id);
-
-                const nombreMostrar = n.nombre || "Registro sin nombre";
-                const catMostrar = n.categoria || "otro";
-                const fechaMostrar = n.fecha_intervencion ? formatFechaHora(n.fecha_intervencion) : (n.fecha_creacion || '');
-
-                card.innerHTML = `
-                    <button class="btn-delete-card" title="Eliminar registro" data-id="${n.id}">
-                        🗑️
-                    </button>
-                    <div class="card-header-row">
-                        <span class="card-title">${nombreMostrar}</span>
-                        <span class="badge-cat cat-${catMostrar}">${catMostrar}</span>
-                    </div>
-                    <div class="card-sub">🪪 Documento: ${n.documento || 'N/A'} | 🚘 Matrícula: ${n.matricula || 'N/A'}</div>
-                    <div class="card-sub" style="font-size: 0.75rem; margin-top: 4px;">📅 Intervención: ${fechaMostrar} ${n.fotos && n.fotos.length ? '📸 (' + n.fotos.length + ')' : ''}</div>
-                `;
-
-                const deleteBtn = card.querySelector('.btn-delete-card');
-                deleteBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    deleteNoteDirect(n.id, nombreMostrar);
-                });
-
-                container.appendChild(card);
-            });
-        }
-
-        async function deleteNoteDirect(id, nombre) {
-            if (confirm(`¿Deseas eliminar la ficha de "${nombre}"?`)) {
-                notes = notes.filter(n => String(n.id) !== String(id));
-                await saveIDBData('id_notes', notes);
-                await saveToLocalFolder();
-                filterCurrentTab();
-            }
-        }
-
-        function viewDetail(id) {
-            currentNoteId = id;
-            currentDetailType = 'person';
-            const n = notes.find(item => String(item.id) === String(id));
-            if (!n) return;
-
-            document.getElementById('detail-header-title').innerText = "Ficha de Persona";
-
-            const container = document.getElementById('detail-content');
-            let photosHTML = "";
-
-            if (n.fotos && n.fotos.length > 0) {
-                photosHTML = `<div class="detail-label">📷 Fotografía(s) adjunta(s) (Haz clic para zoom)</div>
-                <div class="detail-gallery">
-                    ${n.fotos.map(f => `<img src="${f}" onclick="openLightbox('${f}')">`).join('')}
-                </div>`;
-            }
-
-            const fechaIntervencionTexto = n.fecha_intervencion ? formatFechaHora(n.fecha_intervencion) : (n.fecha_creacion || '-');
-
-            container.innerHTML = `
-                <div class="detail-group"><div class="detail-label">🏷️ Categoría</div><div class="detail-value">${(n.categoria || 'otro').toUpperCase()}</div></div>
-                <div class="detail-group"><div class="detail-label">🕒 Fecha y Hora Intervención</div><div class="detail-value">${fechaIntervencionTexto}</div></div>
-                <div class="detail-group"><div class="detail-label">👤 Nombre</div><div class="detail-value">${n.nombre || '-'}</div></div>
-                <div class="detail-group"><div class="detail-label">🪪 Nº Documento</div><div class="detail-value">${n.documento || '-'}</div></div>
-                <div class="detail-group"><div class="detail-label">📍 Lugar</div><div class="detail-value">${n.lugar || '-'}</div></div>
-                <div class="detail-group"><div class="detail-label">🌍 Nacimiento</div><div class="detail-value">${n.lugar_nac || '-'} (${n.fecha_nac || '-'})</div></div>
-                <div class="detail-group"><div class="detail-label">📞 Teléfono</div><div class="detail-value">${n.telefono || '-'}</div></div>
-                <div class="detail-group"><div class="detail-label">👨‍👩‍👦 Padres</div><div class="detail-value">${n.padres || '-'}</div></div>
-                <div class="detail-group"><div class="detail-label">🏠 Domicilio</div><div class="detail-value">${n.domicilio || '-'}</div></div>
-                <div class="detail-group"><div class="detail-label">🚘 Vehículo / Matrícula</div><div class="detail-value">${n.vehiculo || '-'} ${n.matricula ? '(' + n.matricula + ')' : ''}</div></div>
-                <div class="detail-group"><div class="detail-label">📝 Hechos</div><div class="detail-value">${n.hechos || '-'}</div></div>
-                ${photosHTML}
-            `;
-
-            showScreen('screen-detail');
-        }
-
-        function editCurrentRecord() {
             if (currentDetailType === 'person') {
                 const n = notes.find(item => String(item.id) === String(currentNoteId));
                 if (!n) return;
-                document.getElementById('note-id').value = n.id;
-                document.getElementById('categoria').value = n.categoria || 'otro';
-                document.getElementById('fecha_intervencion').value = n.fecha_intervencion || '';
-                document.getElementById('lugar').value = n.lugar || '';
-                document.getElementById('nombre').value = n.nombre || '';
-                document.getElementById('documento').value = n.documento || '';
-                document.getElementById('lugar_nac').value = n.lugar_nac || '';
-                document.getElementById('fecha_nac').value = n.fecha_nac || '';
-                document.getElementById('telefono').value = n.telefono || '';
-                document.getElementById('padres').value = n.padres || '';
-                document.getElementById('domicilio').value = n.domicilio || '';
-                document.getElementById('vehiculo').value = n.vehiculo || '';
-                document.getElementById('matricula').value = n.matricula || '';
-                document.getElementById('hechos').value = n.hechos || '';
-                currentPhotosPerson = n.fotos ? [...n.fotos] : [];
-                renderGallery('person');
-                document.getElementById('form-title').innerText = "Editar Registro";
-                showScreen('screen-form');
+
+                doc.setFontSize(18);
+                doc.setTextColor(20, 30, 55);
+                doc.text("FICHA DE FILIACIÓN / PERSONA", 15, 20);
+
+                doc.setFontSize(10);
+                doc.setTextColor(100);
+                doc.text(`Fecha del Informe: ${new Date().toLocaleString('es-ES')}`, 15, 27);
+                doc.line(15, 30, 195, 30);
+
+                let y = 40;
+                doc.setFontSize(11);
+                doc.setTextColor(0);
+
+                doc.setFont("helvetica", "bold");
+                doc.text("Nombre Completo:", 15, y);
+                doc.setFont("helvetica", "normal");
+                doc.text(n.nombre || '-', 60, y);
+                y += 8;
+
+                doc.setFont("helvetica", "bold");
+                doc.text("Documento:", 15, y);
+                doc.setFont("helvetica", "normal");
+                doc.text(n.documento || '-', 60, y);
+                y += 8;
+
+                doc.setFont("helvetica", "bold");
+                doc.text("Lugar / Fecha Nac.:", 15, y);
+                doc.setFont("helvetica", "normal");
+                doc.text(`${n.lugar_nac || '-'} ${n.fecha_nac ? '(' + n.fecha_nac + ')' : ''}`, 60, y);
+                y += 8;
+
+                doc.setFont("helvetica", "bold");
+                doc.text("Teléfono:", 15, y);
+                doc.setFont("helvetica", "normal");
+                doc.text(n.telefono || '-', 60, y);
+                y += 8;
+
+                doc.setFont("helvetica", "bold");
+                doc.text("Padres:", 15, y);
+                doc.setFont("helvetica", "normal");
+                doc.text(n.padres || '-', 60, y);
+                y += 8;
+
+                doc.setFont("helvetica", "bold");
+                doc.text("Domicilio:", 15, y);
+                doc.setFont("helvetica", "normal");
+                doc.text(n.domicilio || '-', 60, y);
+                y += 8;
+
+                doc.setFont("helvetica", "bold");
+                doc.text("Vehículo / Matrícula:", 15, y);
+                doc.setFont("helvetica", "normal");
+                doc.text(`${n.vehiculo || '-'} ${n.matricula ? '[' + n.matricula + ']' : ''}`, 60, y);
+                y += 12;
+
+                doc.line(15, y, 195, y);
+                y += 8;
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(12);
+                doc.setTextColor(20, 30, 55);
+                doc.text("HISTORIAL DE ACTUACIONES / INTERVENCIONES", 15, y);
+                y += 8;
+
+                if (n.actuaciones && n.actuaciones.length > 0) {
+                    n.actuaciones.forEach((a, idx) => {
+                        if (y > 260) {
+                            doc.addPage();
+                            y = 20;
+                        }
+                        doc.setFontSize(10);
+                        doc.setFont("helvetica", "bold");
+                        doc.setTextColor(224, 130, 40);
+                        doc.text(`#${idx + 1} ${getCatLabel(a.categoria)} - ${formatFechaHora(a.fecha)}`, 15, y);
+                        y += 6;
+
+                        doc.setFont("helvetica", "bold");
+                        doc.setTextColor(0);
+                        doc.text("Lugar:", 20, y);
+                        doc.setFont("helvetica", "normal");
+                        doc.text(a.lugar || 'No especificado', 38, y);
+                        y += 6;
+
+                        doc.setFont("helvetica", "bold");
+                        doc.text("Hechos:", 20, y);
+                        y += 5;
+                        doc.setFont("helvetica", "normal");
+                        const splitText = doc.splitTextToSize(a.hechos || 'Sin detalles.', 165);
+                        doc.text(splitText, 20, y);
+                        y += (splitText.length * 5) + 6;
+                    });
+                } else {
+                    doc.setFontSize(10);
+                    doc.setFont("helvetica", "italic");
+                    doc.text("No constan actuaciones registradas.", 15, y);
+                    y += 10;
+                }
+
+                // INCLUSIÓN DE FOTOGRAFÍAS EN EL PDF DE PERSONA
+                if (n.fotos && n.fotos.length > 0) {
+                    y += 5;
+                    if (y > 240) {
+                        doc.addPage();
+                        y = 20;
+                    }
+                    doc.line(15, y, 195, y);
+                    y += 8;
+
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(12);
+                    doc.setTextColor(20, 30, 55);
+                    doc.text("FOTOGRAFÍAS REGISTRADAS", 15, y);
+                    y += 10;
+
+                    let photoX = 15;
+                    const imgWidth = 50;
+                    const imgHeight = 50;
+
+                    n.fotos.forEach((fotoBase64) => {
+                        if (y + imgHeight > 270) {
+                            doc.addPage();
+                            y = 20;
+                            photoX = 15;
+                        }
+
+                        try {
+                            doc.addImage(fotoBase64, 'JPEG', photoX, y, imgWidth, imgHeight);
+                            photoX += imgWidth + 10;
+
+                            if (photoX + imgWidth > 195) {
+                                photoX = 15;
+                                y += imgHeight + 10;
+                            }
+                        } catch (err) {
+                            console.error("Error al incluir imagen en PDF:", err);
+                        }
+                    });
+                }
+
+                doc.save(`Ficha_Persona_${n.nombre.replace(/\s+/g, '_')}.pdf`);
+
             } else {
                 const v = vehiculos.find(item => String(item.id) === String(currentVehiculoId));
                 if (!v) return;
-                document.getElementById('vehiculo-id').value = v.id;
-                document.getElementById('v_matricula').value = v.matricula || '';
-                document.getElementById('v_marca').value = v.marca || '';
-                document.getElementById('v_modelo').value = v.modelo || '';
-                document.getElementById('v_color').value = v.color || '';
-                document.getElementById('v_vin').value = v.vin || '';
-                document.getElementById('v_titular').value = v.titular || '';
-                document.getElementById('v_documento_titular').value = v.documento_titular || '';
-                document.getElementById('v_anotaciones').value = v.anotaciones || '';
-                currentPhotosVehicle = v.fotos ? [...v.fotos] : [];
-                renderGallery('vehicle');
-                document.getElementById('form-vehiculo-title').innerText = "Editar Vehículo";
-                showScreen('screen-form-vehiculo');
+
+                doc.setFontSize(18);
+                doc.setTextColor(20, 30, 55);
+                doc.text("FICHA TÉCNICA DE VEHÍCULO", 15, 20);
+
+                doc.setFontSize(10);
+                doc.setTextColor(100);
+                doc.text(`Fecha del Informe: ${new Date().toLocaleString('es-ES')}`, 15, 27);
+                doc.line(15, 30, 195, 30);
+
+                let y = 40;
+                doc.setFontSize(11);
+                doc.setTextColor(0);
+
+                doc.setFont("helvetica", "bold");
+                doc.text("Matrícula:", 15, y);
+                doc.setFont("helvetica", "normal");
+                doc.text(v.matricula || '-', 60, y);
+                y += 8;
+
+                doc.setFont("helvetica", "bold");
+                doc.text("Marca / Modelo:", 15, y);
+                doc.setFont("helvetica", "normal");
+                doc.text(`${v.marca || '-'} ${v.modelo || ''}`, 60, y);
+                y += 8;
+
+                doc.setFont("helvetica", "bold");
+                doc.text("Color:", 15, y);
+                doc.setFont("helvetica", "normal");
+                doc.text(v.color || '-', 60, y);
+                y += 8;
+
+                doc.setFont("helvetica", "bold");
+                doc.text("Bastidor (VIN):", 15, y);
+                doc.setFont("helvetica", "normal");
+                doc.text(v.vin || '-', 60, y);
+                y += 8;
+
+                doc.setFont("helvetica", "bold");
+                doc.text("Titular / Conductor:", 15, y);
+                doc.setFont("helvetica", "normal");
+                doc.text(v.titular || '-', 60, y);
+                y += 8;
+
+                doc.setFont("helvetica", "bold");
+                doc.text("Documento Titular:", 15, y);
+                doc.setFont("helvetica", "normal");
+                doc.text(v.documento_titular || '-', 60, y);
+                y += 8;
+
+                doc.setFont("helvetica", "bold");
+                doc.text("Anotaciones:", 15, y);
+                y += 5;
+                doc.setFont("helvetica", "normal");
+                const splitText = doc.splitTextToSize(v.anotaciones || 'Sin anotaciones.', 170);
+                doc.text(splitText, 15, y);
+
+                y += (splitText.length * 5) + 10;
+
+                if (v.fotos && v.fotos.length > 0) {
+                    if (y > 230) {
+                        doc.addPage();
+                        y = 20;
+                    }
+                    doc.setFont("helvetica", "bold");
+                    doc.text("Fotografías adjuntas:", 15, y);
+                    y += 10;
+
+                    let photoX = 15;
+                    const imgWidth = 50;
+                    const imgHeight = 50;
+
+                    v.fotos.forEach((fotoBase64) => {
+                        if (y + imgHeight > 270) {
+                            doc.addPage();
+                            y = 20;
+                            photoX = 15;
+                        }
+
+                        try {
+                            doc.addImage(fotoBase64, 'JPEG', photoX, y, imgWidth, imgHeight);
+                            photoX += imgWidth + 10;
+
+                            if (photoX + imgWidth > 195) {
+                                photoX = 15;
+                                y += imgHeight + 10;
+                            }
+                        } catch (err) {
+                            console.error("Error al incluir imagen en PDF:", err);
+                        }
+                    });
+                }
+
+                doc.save(`Ficha_Vehiculo_${v.matricula}.pdf`);
             }
         }
 
-        async function deleteCurrentRecord() {
-            if (currentDetailType === 'person') {
-                const n = notes.find(item => String(item.id) === String(currentNoteId));
-                if (confirm(`¿Eliminar ficha de "${n ? n.nombre : ''}"?`)) {
-                    notes = notes.filter(item => String(item.id) !== String(currentNoteId));
-                    await saveIDBData('id_notes', notes);
-                    await saveToLocalFolder();
-                    showScreen('screen-archive');
-                }
-            } else {
-                const v = vehiculos.find(item => String(item.id) === String(currentVehiculoId));
-                if (confirm(`¿Eliminar vehículo con matrícula "${v ? v.matricula : ''}"?`)) {
-                    vehiculos = vehiculos.filter(item => String(item.id) !== String(currentVehiculoId));
-                    await saveIDBData('id_vehiculos', vehiculos);
-                    await saveToLocalFolder();
-                    showScreen('screen-archive');
-                }
-            }
-        }
-
-        /* WHATSAPP Y EXPORTACIÓN DE PDF COMPLETA */
+        /* COMPARTIR POR WHATSAPP */
         function shareWhatsApp() {
-            let text = "";
+            let msg = "";
             if (currentDetailType === 'person') {
                 const n = notes.find(item => String(item.id) === String(currentNoteId));
                 if (!n) return;
-                const fechaStr = n.fecha_intervencion ? formatFechaHora(n.fecha_intervencion) : (n.fecha_creacion || '-');
-                text = `*REGISTRO FILIAME (PERSONA)*\n`;
-                text += `*Categoría:* ${(n.categoria || 'otro').toUpperCase()}\n`;
-                text += `*Fecha/Hora:* ${fechaStr}\n`;
-                text += `*Nombre:* ${n.nombre || '-'}\n`;
-                text += `*Documento:* ${n.documento || '-'}\n`;
-                text += `*Nacimiento:* ${n.fecha_nac || '-'} (${n.lugar_nac || '-'})\n`;
-                text += `*Teléfono:* ${n.telefono || '-'}\n`;
-                text += `*Padres:* ${n.padres || '-'}\n`;
-                text += `*Domicilio:* ${n.domicilio || '-'}\n`;
-                text += `*Vehículo:* ${n.vehiculo || '-'} [${n.matricula || '-'}]\n`;
-                text += `*Lugar:* ${n.lugar || '-'}\n`;
-                text += `*Hechos:* ${n.hechos || '-'}\n`;
+
+                msg = `*📄 FICHA DE PERSONA - FILIAME*\n`;
+                msg += `👤 *Nombre:* ${n.nombre || '-'}\n`;
+                msg += `🪪 *Documento:* ${n.documento || '-'}\n`;
+                msg += `🌍 *F.Nac/Lugar:* ${n.fecha_nac || '-'} (${n.lugar_nac || '-'})\n`;
+                msg += `📞 *Teléfono:* ${n.telefono || '-'}\n`;
+                msg += `🚘 *Vehículo:* ${n.vehiculo || '-'} [${n.matricula || '-'}]\n\n`;
+
+                if (n.actuaciones && n.actuaciones.length > 0) {
+                    msg += `🚨 *ANTECEDENTES / ACTUACIONES (${n.actuaciones.length}):*\n`;
+                    n.actuaciones.forEach((a, i) => {
+                        msg += `\n*${i+1}. ${getCatLabel(a.categoria)}* (${formatFechaHora(a.fecha)})\n📍 ${a.lugar || 'Lugar N/A'}\n📝 ${a.hechos || 'Sin datos'}\n`;
+                    });
+                } else {
+                    msg += `🚨 *Sin actuaciones/antecedentes registrados.*`;
+                }
+
             } else {
                 const v = vehiculos.find(item => String(item.id) === String(currentVehiculoId));
                 if (!v) return;
-                text = `*REGISTRO FILIAME (VEHÍCULO)*\n`;
-                text += `*Matrícula:* ${v.matricula || '-'}\n`;
-                text += `*Marca/Modelo:* ${v.marca || '-'} ${v.modelo || ''}\n`;
-                text += `*Color:* ${v.color || '-'}\n`;
-                text += `*Bastidor (VIN):* ${v.vin || '-'}\n`;
-                text += `*Titular/Conductor:* ${v.titular || '-'} (${v.documento_titular || '-'})\n`;
-                text += `*Anotaciones:* ${v.anotaciones || '-'}\n`;
-                text += `*Registrado el:* ${v.fecha_creacion || '-'}\n`;
+
+                msg = `*🚘 FICHA DE VEHÍCULO - FILIAME*\n`;
+                msg += `🔢 *Matrícula:* ${v.matricula || '-'}\n`;
+                msg += `🏎️ *Marca/Modelo:* ${v.marca || '-'} ${v.modelo || ''}\n`;
+                msg += `🎨 *Color:* ${v.color || '-'}\n`;
+                msg += `🛠️ *Bastidor:* ${v.vin || '-'}\n`;
+                msg += `👤 *Titular:* ${v.titular || '-'} (${v.documento_titular || '-'})\n`;
+                msg += `📝 *Obs:* ${v.anotaciones || 'Sin datos'}`;
             }
 
-            const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+            const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
             window.open(url, '_blank');
         }
 
-        function exportPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-            const margin = 15;
-            let y = 15;
-
-            // Header PDF
-            doc.setFillColor(15, 23, 42);
-            doc.rect(0, 0, 210, 28, 'F');
-            doc.setTextColor(224, 169, 109);
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(16);
-            doc.text("FILIAME", margin, 13);
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'normal');
-            doc.text("INFORME DE REGISTRO TÁCTICO", margin, 18);
-
-            const fechaReporte = new Date().toLocaleDateString('es-ES');
-            doc.text(`FECHA DE INFORME: ${fechaReporte}`, 210 - margin, 18, { align: 'right' });
-
-            y = 35;
-
-            if (currentDetailType === 'person') {
-                const n = notes.find(item => String(item.id) === String(currentNoteId));
-                if (!n) return;
-
-                doc.setFillColor(245, 247, 250);
-                doc.rect(margin, y, 180, 8, 'F');
-                doc.setTextColor(15, 23, 42);
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(10);
-                doc.text("1. DATOS COMPLETOS DE LA PERSONA / INTERVENCIÓN", margin + 3, y + 5.5);
-
-                y += 12;
-                doc.setFontSize(9);
-
-                // Función auxiliar para imprimir filas ordenadas
-                const addPdfRow = (label, val) => {
-                    if (y > 270) { doc.addPage(); y = 20; }
-                    doc.setFont('helvetica', 'bold');
-                    doc.setTextColor(15, 23, 42);
-                    doc.text(label, margin, y);
-                    doc.setFont('helvetica', 'normal');
-                    doc.setTextColor(40, 40, 40);
-                    doc.text(String(val || '-'), margin + 45, y);
-                    y += 6;
-                };
-
-                const fechaIntervStr = n.fecha_intervencion ? formatFechaHora(n.fecha_intervencion) : (n.fecha_creacion || '-');
-
-                addPdfRow("Categoría:", (n.categoria || 'otro').toUpperCase());
-                addPdfRow("Fecha/Hora Intervención:", fechaIntervStr);
-                addPdfRow("Lugar de Intervención:", n.lugar);
-                addPdfRow("Nombre y Apellidos:", n.nombre);
-                addPdfRow("Nº Documento (DNI/NIE):", n.documento);
-                addPdfRow("Lugar de Nacimiento:", n.lugar_nac);
-                addPdfRow("Fecha de Nacimiento:", n.fecha_nac);
-                addPdfRow("Teléfono de Contacto:", n.telefono);
-                addPdfRow("Nombre de los Padres:", n.padres);
-                addPdfRow("Domicilio Completo:", n.domicilio);
-                addPdfRow("Vehículo Asociado:", n.vehiculo);
-                addPdfRow("Matrícula Vehículo:", n.matricula);
-
-                y += 2;
-                if (y > 250) { doc.addPage(); y = 20; }
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(15, 23, 42);
-                doc.text("Hechos / Detalle de Intervención:", margin, y);
-                y += 5;
-                doc.setFont('helvetica', 'normal');
-                doc.setTextColor(40, 40, 40);
-
-                const splitHechos = doc.splitTextToSize(n.hechos || 'Sin datos de hechos registrados.', 180);
-                doc.text(splitHechos, margin, y);
-
-                y += (splitHechos.length * 5) + 10;
-                appendPhotosToPDF(doc, n.fotos, y, margin);
-
-            } else {
-                const v = vehiculos.find(item => String(item.id) === String(currentVehiculoId));
-                if (!v) return;
-
-                doc.setFillColor(245, 247, 250);
-                doc.rect(margin, y, 180, 8, 'F');
-                doc.setTextColor(15, 23, 42);
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(10);
-                doc.text("1. DATOS DEL VEHÍCULO REGISTRADO", margin + 3, y + 5.5);
-
-                y += 12;
-                doc.setFontSize(9);
-
-                const addPdfRowV = (label, val) => {
-                    if (y > 270) { doc.addPage(); y = 20; }
-                    doc.setFont('helvetica', 'bold');
-                    doc.setTextColor(15, 23, 42);
-                    doc.text(label, margin, y);
-                    doc.setFont('helvetica', 'normal');
-                    doc.setTextColor(40, 40, 40);
-                    doc.text(String(val || '-'), margin + 45, y);
-                    y += 6;
-                };
-
-                addPdfRowV("Matrícula:", v.matricula);
-                addPdfRowV("Marca / Modelo:", `${v.marca || '-'} ${v.modelo || ''}`);
-                addPdfRowV("Color:", v.color);
-                addPdfRowV("Número Bastidor (VIN):", v.vin);
-                addPdfRowV("Titular / Conductor:", v.titular);
-                addPdfRowV("Documento Titular:", v.documento_titular);
-                addPdfRowV("Fecha de Registro:", v.fecha_creacion);
-
-                y += 2;
-                if (y > 250) { doc.addPage(); y = 20; }
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(15, 23, 42);
-                doc.text("Anotaciones / Observaciones:", margin, y);
-                y += 5;
-                doc.setFont('helvetica', 'normal');
-                doc.setTextColor(40, 40, 40);
-
-                const splitAnot = doc.splitTextToSize(v.anotaciones || 'Sin anotaciones.', 180);
-                doc.text(splitAnot, margin, y);
-
-                y += (splitAnot.length * 5) + 10;
-                appendPhotosToPDF(doc, v.fotos, y, margin);
-            }
-
-            const nombreArchivo = `filiame_informe_${Date.now()}.pdf`;
-            doc.save(nombreArchivo);
-        }
-
-        function appendPhotosToPDF(doc, fotos, startY, margin) {
-            if (!fotos || fotos.length === 0) return;
-            let y = startY;
-            if (y > 210) { doc.addPage(); y = 20; }
-
-            doc.setFillColor(245, 247, 250);
-            doc.rect(margin, y, 180, 8, 'F');
-            doc.setTextColor(15, 23, 42);
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(10);
-            doc.text("2. REGISTRO FOTOGRÁFICO Y ANEXOS", margin + 3, y + 5.5);
-
-            y += 12;
-            let photoX = margin;
-            const photoWidth = 55;
-            const photoHeight = 40;
-
-            fotos.forEach((imgBase64) => {
-                if (photoX + photoWidth > 210 - margin) {
-                    photoX = margin;
-                    y += photoHeight + 5;
-                }
-                if (y + photoHeight > 270) {
-                    doc.addPage();
-                    y = 20;
-                    photoX = margin;
-                }
-                try {
-                    doc.addImage(imgBase64, 'JPEG', photoX, y, photoWidth, photoHeight);
-                    photoX += photoWidth + 5;
-                } catch (e) {}
-            });
-        }
-
-        /* BACKUP & RESTORE */
+        /* BACKUP JSON */
         function exportBackup() {
-            const backupData = {
-                notes: notes,
-                vehiculos: vehiculos,
-                avisos: avisos
-            };
-            const jsonString = JSON.stringify(backupData);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const fileName = `filiame_backup_${new Date().toISOString().slice(0, 10)}.json`;
-
+            const fullData = { notes: notes, vehiculos: vehiculos, avisos: avisos };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullData, null, 2));
             const downloadAnchor = document.createElement('a');
-            downloadAnchor.href = URL.createObjectURL(blob);
-            downloadAnchor.download = fileName;
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `filiame_copia_seguridad_${new Date().toISOString().slice(0,10)}.json`);
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
-            setTimeout(() => { downloadAnchor.remove(); URL.revokeObjectURL(downloadAnchor.href); }, 1000);
+            downloadAnchor.remove();
         }
 
         function importBackup(event) {
@@ -2134,23 +2326,25 @@
             const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
-                    const imported = JSON.parse(e.target.result);
-                    if (imported.notes || imported.vehiculos || imported.avisos) {
-                        notes = imported.notes || [];
-                        vehiculos = imported.vehiculos || [];
-                        avisos = imported.avisos || [];
-                    } else if (Array.isArray(imported)) {
-                        notes = imported;
+                    const importedData = JSON.parse(e.target.result);
+                    if (Array.isArray(importedData)) {
+                        notes = importedData;
+                    } else {
+                        notes = importedData.notes || [];
+                        vehiculos = importedData.vehiculos || [];
+                        avisos = importedData.avisos || [];
                     }
+
                     await saveIDBData('id_notes', notes);
                     await saveIDBData('id_vehiculos', vehiculos);
                     await saveIDBData('id_avisos', avisos);
                     await saveToLocalFolder();
-                    alert(`✅ Copia cargada: (${notes.length} personas, ${vehiculos.length} vehículos, ${avisos.length} avisos)`);
+
+                    alert("✅ Copia de seguridad restaurada correctamente.");
+                    showScreen('screen-archive');
                 } catch (err) {
-                    alert("⚠️ Error al importar archivo de copia.");
+                    alert("⚠️ Error al importar el archivo JSON.");
                 }
-                event.target.value = '';
             };
             reader.readAsText(file);
         }
