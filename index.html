@@ -2308,15 +2308,52 @@
         }
 
         /* BACKUP JSON */
-        function exportBackup() {
+        async function exportBackup() {
             const fullData = { notes: notes, vehiculos: vehiculos, avisos: avisos };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullData, null, 2));
+            const fileName = `filiame_copia_seguridad_${new Date().toISOString().slice(0,10)}.json`;
+            const json = JSON.stringify(fullData, null, 2);
+
+            // Safari/iOS no siempre ejecuta correctamente <a download> con data: URLs.
+            // Blob + Web Share permite que iOS muestre su hoja de compartir y
+            // seleccionar "Guardar en Archivos", manteniendo la descarga original
+            // en Windows y Android.
+            const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+            const file = new File([blob], fileName, { type: 'application/json' });
+
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+            if (isIOS && navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'Copia de seguridad FILIAME'
+                    });
+                    return;
+                } catch (err) {
+                    // Si el usuario cancela o Safari no permite compartir el archivo,
+                    // se utiliza el método alternativo mediante Blob URL.
+                    if (err && err.name === 'AbortError') return;
+                }
+            }
+
+            const blobUrl = URL.createObjectURL(blob);
             const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `filiame_copia_seguridad_${new Date().toISOString().slice(0,10)}.json`);
+            downloadAnchor.href = blobUrl;
+            downloadAnchor.download = fileName;
+            downloadAnchor.style.display = 'none';
             document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
+
+            if (isIOS) {
+                window.location.href = blobUrl;
+            } else {
+                downloadAnchor.click();
+            }
+
+            setTimeout(() => {
+                downloadAnchor.remove();
+                URL.revokeObjectURL(blobUrl);
+            }, 1000);
         }
 
         function importBackup(event) {
