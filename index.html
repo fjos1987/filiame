@@ -228,6 +228,20 @@
             padding: 14px 16px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden;
         }
         .card:hover { border-color: var(--card-border-glow); }
+
+        /* PERSONAS VINCULADAS */
+        .vinculo-card { background: rgba(12, 18, 32, 0.8); border: 1px solid var(--card-border); border-radius: var(--radius-medium); padding: 10px 12px; margin-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .vinculo-info { flex: 1; min-width: 0; cursor: pointer; }
+        .vinculo-name { color: var(--text-white); font-weight: 700; font-size: 0.9rem; }
+        .vinculo-doc { color: var(--text-muted); font-size: 0.75rem; margin-top: 2px; }
+        .vinculo-type { color: var(--accent-gold); font-size: 0.75rem; font-weight: 700; margin-top: 3px; }
+        .vinculo-actions { display: flex; gap: 4px; flex-shrink: 0; }
+        .vinculo-search-results { max-height: 220px; overflow-y: auto; margin-top: 8px; }
+        .vinculo-search-result { padding: 10px; border: 1px solid var(--card-border); border-radius: 10px; margin-top: 6px; cursor: pointer; background: rgba(12,18,32,.7); }
+        .vinculo-search-result:hover { border-color: var(--accent-gold); }
+        .vinculo-mode-note { font-size:.75rem; color:var(--text-muted); margin:8px 0 12px; }
+        .vinculo-form-scroll { max-height: 72vh; overflow-y: auto; padding-right: 3px; }
+
         .card-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; padding-right: 28px; }
         .card-title { color: var(--text-white); font-weight: 700; font-size: 1.05rem; }
 
@@ -286,6 +300,21 @@
         .detail-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 10px; }
         .detail-gallery img { width: 100%; height: 110px; object-fit: cover; border-radius: var(--radius-medium); border: 1px solid var(--card-border); cursor: pointer; transition: transform 0.2s; }
         .detail-gallery img:hover { transform: scale(1.03); border-color: var(--accent-gold); }
+
+        .detail-section-button {
+            width: 100%; display: flex; align-items: center; gap: 12px; text-align: left;
+            background: var(--card-glass); border: 1px solid var(--card-border-glow);
+            border-radius: var(--radius-medium); padding: 15px; margin-top: 12px; color: var(--text-white);
+            cursor: pointer; transition: all 0.2s ease;
+        }
+        .detail-section-button:hover { border-color: var(--accent-gold); transform: translateY(-1px); }
+        .detail-section-button-icon { width: 42px; height: 42px; border-radius: 12px;
+            display:flex; align-items:center; justify-content:center; background:rgba(224,169,109,.15);
+            border:1px solid var(--card-border); font-size:1.25rem; flex-shrink:0; }
+        .detail-section-button-info { flex:1; min-width:0; }
+        .detail-section-button-info strong { display:block; color:var(--accent-gold); font-size:.82rem; letter-spacing:.4px; }
+        .detail-section-button-info small { display:block; color:var(--text-muted); font-size:.75rem; margin-top:4px; }
+        .detail-section-button-arrow { color:var(--accent-gold); font-size:1.8rem; line-height:1; }
 
         /* ESTILOS DEL HISTORIAL DE ACTUACIONES EN FICHA DE PERSONA */
         .actuacion-card {
@@ -656,6 +685,26 @@
                 <button class="btn-danger" id="btn-delete-detail" onclick="deleteCurrentRecord()">🗑️ Eliminar Ficha Completa</button>
             </div>
 
+            <!-- 8. PANTALLA PERSONAS VINCULADAS -->
+            <div id="screen-vinculos" class="screen">
+                <div class="header-title">
+                    <button class="btn-back" onclick="viewPersonDetail(currentNoteId)">← Volver a la ficha</button>
+                    <h2 class="section-title-text">Personas vinculadas</h2>
+                    <div></div>
+                </div>
+                <div id="vinculos-screen-content"></div>
+            </div>
+
+            <!-- 9. PANTALLA HISTORIAL DE ACTUACIONES -->
+            <div id="screen-actuaciones" class="screen">
+                <div class="header-title">
+                    <button class="btn-back" onclick="viewPersonDetail(currentNoteId)">← Volver a la ficha</button>
+                    <h2 class="section-title-text">Historial de actuaciones</h2>
+                    <div></div>
+                </div>
+                <div id="actuaciones-screen-content"></div>
+            </div>
+
         </div>
 
         <!-- NAV INFERIOR -->
@@ -709,6 +758,58 @@
             <textarea id="actuacion_hechos" placeholder="Describe detalladamente la intervención policial..."></textarea>
 
             <button class="btn-primary" onclick="saveActuacionModal()">Guardar Actuación</button>
+        </div>
+    </div>
+
+    <!-- MODAL NUEVA PERSONA VINCULADA -->
+    <div id="modal-vinculo" class="modal-overlay">
+        <div class="modal-content">
+            <button class="lightbox-close" style="position:absolute; top:15px; right:15px;" onclick="closeVinculoModal()">✕</button>
+            <h3 style="margin-top:0; color:var(--accent-gold); font-size:1.1rem; text-transform:uppercase;">👥 Persona Vinculada</h3>
+            <input type="hidden" id="vinculo_persona_id">
+            <input type="hidden" id="vinculo_persona_existente_id">
+
+            <div class="vinculo-form-scroll">
+                <div class="label">🔍 Buscar en el historial de Personas</div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="text" id="vinculo_busqueda" placeholder="Nombre, DNI/NIE o teléfono" oninput="buscarPersonaVinculo()" style="margin:0;">
+                    <button type="button" class="btn-inline" onclick="buscarPersonaVinculo()" title="Buscar en Personas" style="font-size:1.1rem; padding:10px 13px;">🔎</button>
+                </div>
+                <div id="vinculo-search-results" class="vinculo-search-results"></div>
+                <div id="vinculo-seleccionada" class="vinculo-mode-note"></div>
+
+                <div id="vinculo-datos-nueva">
+                    <div class="label">👤 Nombre y apellidos</div>
+                    <input type="text" id="vinculo_nombre" placeholder="Nombre completo">
+                    <div class="row">
+                        <div class="col"><div class="label">🪪 Nº Documento</div><input type="text" id="vinculo_documento" placeholder="DNI / NIE / Pasaporte"></div>
+                        <div class="col"><div class="label">🌍 Nacimiento</div><input type="text" id="vinculo_lugar_nac" placeholder="Lugar"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col"><div class="label">📅 Fecha Nac.</div><input type="text" id="vinculo_fecha_nac" placeholder="DD/MM/AAAA"></div>
+                        <div class="col"><div class="label">📞 Teléfono</div><input type="tel" id="vinculo_telefono" placeholder="Número"></div>
+                    </div>
+                    <div class="label">👨‍👩‍👦 Nombre de los padres</div><input type="text" id="vinculo_padres" placeholder="Padre y Madre">
+                    <div class="label">🏠 Domicilio</div><input type="text" id="vinculo_domicilio" placeholder="Dirección completa">
+                    <div class="row">
+                        <div class="col"><div class="label">🚘 Vehículo Habitual</div><input type="text" id="vinculo_vehiculo" placeholder="Marca/Modelo"></div>
+                        <div class="col"><div class="label">🔢 Matrícula</div><input type="text" id="vinculo_matricula" placeholder="Matrícula"></div>
+                    </div>
+                    <div class="label">📷 Fotografías</div>
+                    <div class="photo-controls-row">
+                        <label for="vinculo-photo-camera" class="custom-file-upload">📷 Tomar Foto</label>
+                        <input type="file" id="vinculo-photo-camera" accept="image/*" capture="environment" style="display:none;" onchange="handleVinculoPhotos(event)">
+                        <label for="vinculo-photo-input" class="custom-file-upload">📁 Galería</label>
+                        <input type="file" id="vinculo-photo-input" accept="image/*" multiple style="display:none;" onchange="handleVinculoPhotos(event)">
+                    </div>
+                    <div id="vinculo-gallery" class="gallery-grid"></div>
+                </div>
+
+                <div class="label" style="margin-top:12px;">🔗 Vínculo personal entre ambas personas</div>
+                <input type="text" id="vinculo_tipo" placeholder="Ej: Hermano, pareja, padre, amigo...">
+                <p id="vinculo-ayuda" style="font-size:0.75rem; color:var(--text-muted); margin:10px 0 0;">Si seleccionas una persona existente con la lupa, no tendrás que volver a introducir sus datos: solo indica el vínculo personal.</p>
+            </div>
+            <button class="btn-primary" onclick="saveVinculo()">Guardar Persona Vinculada</button>
         </div>
     </div>
 
@@ -864,6 +965,7 @@
             
             // Migración de la estructura antigua a Ficha Limpia con Historial de Actuaciones
             notes = rawNotes.map(n => {
+                if (!Array.isArray(n.vinculos)) n.vinculos = [];
                 if (!n.actuaciones) {
                     n.actuaciones = [];
                     // Si el registro antiguo contenía información de intervención la pasamos al historial
@@ -1161,7 +1263,8 @@
                 vehiculo: document.getElementById('vehiculo').value.trim(),
                 matricula: document.getElementById('matricula').value.trim().toUpperCase(),
                 fotos: [...currentPhotosPerson],
-                actuaciones: existingNote ? (existingNote.actuaciones || []) : []
+                actuaciones: existingNote ? (existingNote.actuaciones || []) : [],
+                vinculos: existingNote ? (existingNote.vinculos || []) : []
             };
 
             if (currentNoteId) {
@@ -1220,6 +1323,9 @@
         async function deletePersonDirect(id, nombre) {
             if (confirm(`¿Deseas eliminar la ficha completa de "${nombre}"?`)) {
                 notes = notes.filter(n => String(n.id) !== String(id));
+                notes.forEach(n => {
+                    if (Array.isArray(n.vinculos)) n.vinculos = n.vinculos.filter(v => String(v.personaId) !== String(id));
+                });
                 await saveIDBData('id_notes', notes);
                 await saveToLocalFolder();
                 filterCurrentTab();
@@ -1245,29 +1351,7 @@
                 </div>`;
             }
 
-            let actuacionesHTML = "";
-            if (n.actuaciones && n.actuaciones.length > 0) {
-                actuacionesHTML = n.actuaciones.map((a) => {
-                    const catClass = getCatBadgeClass(a.categoria);
-                    const catLabel = getCatLabel(a.categoria);
-                    return `
-                        <div class="actuacion-card">
-                            <div class="actuacion-header">
-                                <span class="badge-cat ${catClass}">${catLabel}</span>
-                                <span style="font-size:0.75rem; color:var(--text-muted);">🕒 ${formatFechaHora(a.fecha)}</span>
-                            </div>
-                            <div style="font-size:0.85rem; color:#fff; font-weight:600; margin-top:4px;">📍 Lugar: ${a.lugar || 'No especificado'}</div>
-                            <div style="font-size:0.85rem; color:#cbd5e1; margin-top:4px; white-space:pre-wrap;">📝 <strong>Hechos:</strong> ${a.hechos || 'Sin detalles.'}</div>
-                            <div class="actuacion-actions">
-                                <button class="btn-inline" title="Editar actuación" onclick="openActuacionModal('${n.id}', '${a.id}')">✏️</button>
-                                <button class="btn-inline" style="background:rgba(255,82,82,0.2); color:var(--danger-red); border-color:rgba(255,82,82,0.3);" title="Eliminar actuación" onclick="deleteActuacion('${n.id}', '${a.id}')">🗑</button>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            } else {
-                actuacionesHTML = `<div style="font-size:0.85rem; color:var(--text-muted); margin-top:6px; font-style:italic;">No hay intervenciones/actuaciones registradas.</div>`;
-            }
+            let actuacionesHTML = renderActuacionesHTML(n);
 
             container.innerHTML = `
                 <div class="detail-group"><div class="detail-label">👤 Nombre Completo</div><div class="detail-value" style="font-size:1.15rem; font-weight:bold; color:var(--accent-gold);">${n.nombre || '-'}</div></div>
@@ -1279,18 +1363,158 @@
                 <div class="detail-group"><div class="detail-label">🚘 Vehículo / Matrícula</div><div class="detail-value">${n.vehiculo || '-'} ${n.matricula ? '[' + n.matricula + ']' : ''}</div></div>
                 ${photosHTML}
 
-                <div class="detail-group" style="margin-top:15px; border-color:var(--card-border-glow);">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div class="detail-label" style="font-size:0.85rem; color:var(--accent-gold);">🚨 HISTORIAL DE ACTUACIONES / ANTECEDENTES</div>
-                        <button class="btn-inline" onclick="openActuacionModal('${n.id}')">➕ Nueva Actuación</button>
-                    </div>
-                    <div style="margin-top:10px;">
-                        ${actuacionesHTML}
-                    </div>
-                </div>
+                <button class="detail-section-button" onclick="openPersonVinculosScreen('${n.id}')">
+                    <span class="detail-section-button-icon">👥</span>
+                    <span class="detail-section-button-info">
+                        <strong>PERSONAS VINCULADAS</strong>
+                        <small>${n.vinculos && n.vinculos.length ? n.vinculos.length + ' persona(s) vinculada(s)' : 'Sin personas vinculadas'}</small>
+                    </span>
+                    <span class="detail-section-button-arrow">›</span>
+                </button>
+
+                <button class="detail-section-button" onclick="openPersonActuacionesScreen('${n.id}')">
+                    <span class="detail-section-button-icon">🚨</span>
+                    <span class="detail-section-button-info">
+                        <strong>HISTORIAL DE ACTUACIONES / ANTECEDENTES</strong>
+                        <small>${n.actuaciones && n.actuaciones.length ? n.actuaciones.length + ' actuación(es) registrada(s)' : 'Sin actuaciones registradas'}</small>
+                    </span>
+                    <span class="detail-section-button-arrow">›</span>
+                </button>
             `;
 
             showScreen('screen-detail');
+        }
+
+        function openPersonVinculosScreen(personId) {
+            const n = notes.find(item => String(item.id) === String(personId));
+            if (!n) return;
+            currentNoteId = n.id;
+            currentDetailType = 'person';
+            document.getElementById('vinculos-screen-content').innerHTML = `
+                <div class="detail-group">
+                    <div class="detail-label">👤 PERSONA</div>
+                    <div class="detail-value" style="font-size:1.1rem; font-weight:bold; color:var(--accent-gold);">${n.nombre || '-'}</div>
+                </div>
+                <button class="btn-primary" onclick="openVinculoModal('${n.id}')">➕ Añadir Persona Vinculada</button>
+                <div style="margin-top:12px;">${renderVinculosHTML(n)}</div>
+            `;
+            showScreen('screen-vinculos');
+        }
+
+        function openPersonActuacionesScreen(personId) {
+            const n = notes.find(item => String(item.id) === String(personId));
+            if (!n) return;
+            currentNoteId = n.id;
+            currentDetailType = 'person';
+            document.getElementById('actuaciones-screen-content').innerHTML = `
+                <div class="detail-group">
+                    <div class="detail-label">👤 PERSONA</div>
+                    <div class="detail-value" style="font-size:1.1rem; font-weight:bold; color:var(--accent-gold);">${n.nombre || '-'}</div>
+                </div>
+                <button class="btn-primary" onclick="openActuacionModal('${n.id}')">➕ Nueva Actuación</button>
+                <div style="margin-top:12px;">${renderActuacionesHTML(n)}</div>
+            `;
+            showScreen('screen-actuaciones');
+        }
+
+        function renderActuacionesHTML(persona) {
+            if (!persona.actuaciones || persona.actuaciones.length === 0) {
+                return `<div style="font-size:0.85rem; color:var(--text-muted); margin-top:6px; font-style:italic;">No hay intervenciones/actuaciones registradas.</div>`;
+            }
+            return persona.actuaciones.map(a => {
+                const catClass = getCatBadgeClass(a.categoria);
+                const catLabel = getCatLabel(a.categoria);
+                return `
+                    <div class="actuacion-card">
+                        <div class="actuacion-header">
+                            <span class="badge-cat ${catClass}">${catLabel}</span>
+                            <span style="font-size:0.75rem; color:var(--text-muted);">🕒 ${formatFechaHora(a.fecha)}</span>
+                        </div>
+                        <div style="font-size:0.85rem; color:#fff; font-weight:600; margin-top:4px;">📍 Lugar: ${a.lugar || 'No especificado'}</div>
+                        <div style="font-size:0.85rem; color:#cbd5e1; margin-top:4px; white-space:pre-wrap;">📝 <strong>Hechos:</strong> ${a.hechos || 'Sin detalles.'}</div>
+                        <div class="actuacion-actions">
+                            <button class="btn-inline" title="Editar actuación" onclick="openActuacionModal('${persona.id}', '${a.id}')">✏️</button>
+                            <button class="btn-inline" style="background:rgba(255,82,82,0.2); color:var(--danger-red); border-color:rgba(255,82,82,0.3);" title="Eliminar actuación" onclick="deleteActuacion('${persona.id}', '${a.id}')">🗑</button>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        /* PERSONAS VINCULADAS */
+        let currentVinculoPhotos = [];
+
+        function renderVinculosHTML(persona) {
+            if (!persona.vinculos || persona.vinculos.length === 0) return `<div style="font-size:0.85rem; color:var(--text-muted); margin-top:6px; font-style:italic;">No hay personas vinculadas registradas.</div>`;
+            return persona.vinculos.map(v => {
+                const vinculada = notes.find(item => String(item.id) === String(v.personaId));
+                if (!vinculada) return '';
+                return `<div class="vinculo-card"><div class="vinculo-info" onclick="viewPersonDetail('${vinculada.id}')"><div class="vinculo-name">👤 ${vinculada.nombre || 'Sin nombre'}</div><div class="vinculo-doc">🪪 ${vinculada.documento || 'SIN DOCUMENTO'}</div><div class="vinculo-type">🔗 ${v.vinculo || 'Vínculo no especificado'}</div></div><div class="vinculo-actions"><button class="btn-inline" title="Ver ficha" onclick="viewPersonDetail('${vinculada.id}')">👁️</button><button class="btn-inline" style="background:rgba(255,82,82,0.2); color:var(--danger-red); border-color:rgba(255,82,82,0.3);" title="Eliminar vínculo" onclick="deleteVinculo('${persona.id}', '${vinculada.id}')">🗑</button></div></div>`;
+            }).join('');
+        }
+
+        function openVinculoModal(personaId) {
+            document.getElementById('vinculo_persona_id').value = personaId;
+            document.getElementById('vinculo_persona_existente_id').value = '';
+            document.getElementById('vinculo_busqueda').value = '';
+            document.getElementById('vinculo-search-results').innerHTML = '';
+            document.getElementById('vinculo-seleccionada').innerHTML = '';
+            document.getElementById('vinculo-datos-nueva').style.display = 'block';
+            document.getElementById('vinculo-ayuda').style.display = 'block';
+            ['nombre','documento','lugar_nac','fecha_nac','telefono','padres','domicilio','vehiculo','matricula','tipo'].forEach(k => document.getElementById('vinculo_'+k).value='');
+            currentVinculoPhotos=[]; renderVinculoGallery();
+            document.getElementById('modal-vinculo').classList.add('active');
+        }
+
+        function closeVinculoModal() { document.getElementById('modal-vinculo').classList.remove('active'); }
+
+        function buscarPersonaVinculo() {
+            const actual=document.getElementById('vinculo_persona_id').value, term=document.getElementById('vinculo_busqueda').value.trim().toLowerCase(), c=document.getElementById('vinculo-search-results');
+            if(!term){c.innerHTML=`<div style="font-size:.75rem;color:var(--text-muted);">Escribe un nombre, documento o teléfono para buscar.</div>`;return;}
+            const r=notes.filter(n=>String(n.id)!==String(actual)&&((n.nombre&&n.nombre.toLowerCase().includes(term))||(n.documento&&n.documento.toLowerCase().includes(term))||(n.telefono&&n.telefono.toLowerCase().includes(term)))).slice(0,20);
+            if(!r.length){c.innerHTML=`<div style="font-size:.75rem;color:var(--text-muted);">No se ha encontrado ninguna persona. Puedes completar una ficha nueva abajo.</div>`;return;}
+            c.innerHTML=r.map(n=>`<div class="vinculo-search-result" onclick="seleccionarPersonaVinculo('${n.id}')"><div style="font-weight:700;color:var(--text-white);">👤 ${n.nombre||'Sin nombre'}</div><div style="font-size:.75rem;color:var(--text-muted);margin-top:3px;">🪪 ${n.documento||'SIN DOCUMENTO'} · 📞 ${n.telefono||'N/A'}</div></div>`).join('');
+        }
+
+        function seleccionarPersonaVinculo(personaId) {
+            const p=notes.find(n=>String(n.id)===String(personaId)); if(!p)return;
+            document.getElementById('vinculo_persona_existente_id').value=p.id;
+            ['nombre','documento','lugar_nac','fecha_nac','telefono','padres','domicilio','vehiculo','matricula'].forEach(k=>document.getElementById('vinculo_'+k).value=p[k]||'');
+            currentVinculoPhotos=[...(p.fotos||[])]; renderVinculoGallery();
+            document.getElementById('vinculo-datos-nueva').style.display='none'; document.getElementById('vinculo-ayuda').style.display='none'; document.getElementById('vinculo-search-results').innerHTML='';
+            document.getElementById('vinculo-seleccionada').innerHTML=`✅ <strong>Persona seleccionada:</strong> ${p.nombre||'Sin nombre'} · ${p.documento||'SIN DOCUMENTO'}<br><span style="font-size:.72rem;">Solo tienes que indicar el vínculo personal.</span>`;
+        }
+
+        function handleVinculoPhotos(event) {
+            const files=Array.from(event.target.files); if(!files.length)return; let loaded=0;
+            files.forEach(file=>{const reader=new FileReader(); reader.onload=e=>compressImage(e.target.result,1600,0.85,b=>{currentVinculoPhotos.push(b);loaded++;if(loaded===files.length)renderVinculoGallery();}); reader.readAsDataURL(file);}); event.target.value='';
+        }
+
+        function renderVinculoGallery() {
+            const c=document.getElementById('vinculo-gallery'); if(!c)return; c.innerHTML='';
+            currentVinculoPhotos.forEach((img,i)=>{const item=document.createElement('div');item.className='gallery-item';item.innerHTML=`<img src="${img}" alt="Foto vinculada"><button type="button" class="gallery-delete" onclick="currentVinculoPhotos.splice(${i},1); renderVinculoGallery();">✕</button>`;c.appendChild(item);});
+        }
+
+        async function saveVinculo() {
+            const personaId=document.getElementById('vinculo_persona_id').value, existenteId=document.getElementById('vinculo_persona_existente_id').value, vinculo=document.getElementById('vinculo_tipo').value.trim();
+            const persona=notes.find(n=>String(n.id)===String(personaId)); if(!persona)return;
+            if(!vinculo){alert("Especifica el vínculo personal entre ambas personas.");return;}
+            let vinculada=existenteId?notes.find(n=>String(n.id)===String(existenteId)):null;
+            if(!vinculada){
+                const nombre=document.getElementById('vinculo_nombre').value.trim(); if(!nombre){alert("Introduce el nombre y apellidos de la persona vinculada, o búscala con la lupa.");return;}
+                vinculada={id:Date.now().toString()+"_v",fecha_creacion:new Date().toLocaleString('es-ES'),nombre,documento:document.getElementById('vinculo_documento').value.trim().toUpperCase(),lugar_nac:document.getElementById('vinculo_lugar_nac').value.trim(),fecha_nac:document.getElementById('vinculo_fecha_nac').value.trim(),telefono:document.getElementById('vinculo_telefono').value.trim(),padres:document.getElementById('vinculo_padres').value.trim(),domicilio:document.getElementById('vinculo_domicilio').value.trim(),vehiculo:document.getElementById('vinculo_vehiculo').value.trim(),matricula:document.getElementById('vinculo_matricula').value.trim().toUpperCase(),fotos:[...currentVinculoPhotos],actuaciones:[],vinculos:[]};
+                notes.unshift(vinculada);
+            }
+            if(!Array.isArray(persona.vinculos))persona.vinculos=[]; if(!Array.isArray(vinculada.vinculos))vinculada.vinculos=[];
+            if(persona.vinculos.some(v=>String(v.personaId)===String(vinculada.id))){alert("Estas personas ya están vinculadas.");return;}
+            persona.vinculos.push({personaId:vinculada.id,vinculo}); vinculada.vinculos.push({personaId:persona.id,vinculo});
+            await saveIDBData('id_notes',notes); await saveToLocalFolder(); closeVinculoModal(); openPersonVinculosScreen(persona.id);
+        }
+
+        async function deleteVinculo(personaId,vinculadaId){
+            const persona=notes.find(n=>String(n.id)===String(personaId)), vinculada=notes.find(n=>String(n.id)===String(vinculadaId)); if(!persona||!vinculada)return;
+            if(!confirm(`¿Deseas eliminar el vínculo entre "${persona.nombre}" y "${vinculada.nombre}"?`))return;
+            persona.vinculos=(persona.vinculos||[]).filter(v=>String(v.personaId)!==String(vinculadaId)); vinculada.vinculos=(vinculada.vinculos||[]).filter(v=>String(v.personaId)!==String(personaId));
+            await saveIDBData('id_notes',notes); await saveToLocalFolder(); openPersonVinculosScreen(persona.id);
         }
 
         /* MODAL Y GESTIÓN DE SUB-FICHA DE ACTUACIONES */
@@ -1354,7 +1578,7 @@
             await saveToLocalFolder();
 
             closeActuacionModal();
-            viewPersonDetail(currentNoteId);
+            openPersonActuacionesScreen(currentNoteId);
         }
 
         async function deleteActuacion(personId, actuacionId) {
@@ -1364,7 +1588,7 @@
                     n.actuaciones = n.actuaciones.filter(a => String(a.id) !== String(actuacionId));
                     await saveIDBData('id_notes', notes);
                     await saveToLocalFolder();
-                    viewPersonDetail(personId);
+                    openPersonActuacionesScreen(personId);
                 }
             }
         }
