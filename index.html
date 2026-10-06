@@ -318,10 +318,12 @@
 
         /* ESTILOS DEL HISTORIAL DE ACTUACIONES EN FICHA DE PERSONA */
         .actuacion-card {
+            cursor: pointer; transition: border-color .2s, transform .15s;
             background: rgba(12, 18, 32, 0.8); border: 1px solid var(--card-border);
             border-radius: var(--radius-medium); padding: 12px; margin-top: 8px; position: relative;
             word-break: break-word; overflow-wrap: break-word;
         }
+        .actuacion-card:hover { border-color: var(--accent-gold); transform: translateY(-1px); }
         .actuacion-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-right: 80px; }
         .actuacion-cat { font-size: 0.7rem; padding: 2px 6px; border-radius: 6px; font-weight: bold; text-transform: uppercase; }
 
@@ -725,6 +727,15 @@
 
     </div>
 
+    <!-- MODAL LECTURA DE ACTUACIÓN -->
+    <div id="modal-ver-actuacion" class="modal-overlay">
+        <div class="modal-content">
+            <button class="lightbox-close" style="position:absolute; top:15px; right:15px;" onclick="closeVerActuacionModal()">✕</button>
+            <h3 style="margin-top:0; color:var(--accent-gold); font-size:1.1rem; text-transform:uppercase;">🚨 Ficha de Actuación</h3>
+            <div id="ver-actuacion-content"></div>
+        </div>
+    </div>
+
     <!-- MODAL NUEVA / EDITAR ACTUACIÓN POLICIAL (SUB-FICHA) -->
     <div id="modal-actuacion" class="modal-overlay">
         <div class="modal-content">
@@ -756,6 +767,45 @@
                 <button type="button" class="btn-inline" onclick="startVoiceDictation('actuacion_hechos')">🎙️ Dictar</button>
             </div>
             <textarea id="actuacion_hechos" placeholder="Describe detalladamente la intervención policial..."></textarea>
+
+            <div class="label">👥 PERSONAS IMPLICADAS</div>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <input type="text" id="actuacion_persona_busqueda" placeholder="Buscar por nombre, DNI/NIE o teléfono" oninput="buscarPersonaActuacion()" style="margin:0;">
+                <button type="button" class="btn-inline" onclick="buscarPersonaActuacion()" title="Buscar persona" style="font-size:1.1rem; padding:10px 13px;">🔎</button>
+            </div>
+            <div id="actuacion-persona-search-results" class="vinculo-search-results"></div>
+            <button type="button" class="btn-action" onclick="mostrarNuevaPersonaActuacion()">➕ Añadir persona que no existe en el registro</button>
+
+            <div id="actuacion-nueva-persona" class="form-section" style="display:none; margin-top:10px; padding:14px;">
+                <div style="font-size:.82rem; color:var(--accent-gold); font-weight:700; text-transform:uppercase;">👤 Nueva persona</div>
+                <div class="label">👤 Nombre y apellidos</div>
+                <input type="text" id="actuacion_nueva_nombre" placeholder="Nombre completo">
+                <div class="row">
+                    <div class="col"><div class="label">🪪 Nº Documento</div><input type="text" id="actuacion_nueva_documento" placeholder="DNI / NIE / Pasaporte"></div>
+                    <div class="col"><div class="label">🌍 Lugar de nacimiento</div><input type="text" id="actuacion_nueva_lugar_nac" placeholder="Lugar"></div>
+                </div>
+                <div class="row">
+                    <div class="col"><div class="label">📅 Fecha de nacimiento</div><input type="text" id="actuacion_nueva_fecha_nac" placeholder="DD/MM/AAAA"></div>
+                    <div class="col"><div class="label">📞 Teléfono</div><input type="tel" id="actuacion_nueva_telefono" placeholder="Número"></div>
+                </div>
+                <div class="label">👨‍👩‍👦 Nombre de los padres</div><input type="text" id="actuacion_nueva_padres" placeholder="Padre y Madre">
+                <div class="label">🏠 Domicilio</div><input type="text" id="actuacion_nueva_domicilio" placeholder="Dirección completa">
+                <div class="row">
+                    <div class="col"><div class="label">🚘 Vehículo Habitual</div><input type="text" id="actuacion_nueva_vehiculo" placeholder="Marca/Modelo"></div>
+                    <div class="col"><div class="label">🔢 Matrícula</div><input type="text" id="actuacion_nueva_matricula" placeholder="Matrícula"></div>
+                </div>
+                <div class="label">📷 Fotografías</div>
+                <div class="photo-controls-row">
+                    <label for="actuacion-nueva-photo-camera" class="custom-file-upload">📷 Tomar Foto</label>
+                    <input type="file" id="actuacion-nueva-photo-camera" accept="image/*" capture="environment" style="display:none;" onchange="handleNuevaPersonaActuacionPhotos(event)">
+                    <label for="actuacion-nueva-photo-input" class="custom-file-upload">📁 Galería</label>
+                    <input type="file" id="actuacion-nueva-photo-input" accept="image/*" multiple style="display:none;" onchange="handleNuevaPersonaActuacionPhotos(event)">
+                </div>
+                <div id="actuacion-nueva-gallery" class="gallery-grid"></div>
+                <button type="button" class="btn-primary" style="margin-top:10px;" onclick="anadirNuevaPersonaActuacion()">Añadir persona a la actuación</button>
+            </div>
+
+            <div id="actuacion-implicados-list" style="margin-top:8px;"></div>
 
             <button class="btn-primary" onclick="saveActuacionModal()">Guardar Actuación</button>
         </div>
@@ -891,6 +941,8 @@
         let currentVehiculoId = null;
         let currentActiveTab = 'personas'; // 'personas' | 'vehiculos'
         let currentDetailType = 'person'; // 'person' | 'vehicle'
+        let currentActuacionImplicados = [];
+        let currentActuacionNuevaPersonaPhotos = [];
 
         let directoryHandle = null;
         let isSyncActive = false;
@@ -1417,6 +1469,38 @@
             showScreen('screen-actuaciones');
         }
 
+        function openActuacionView(personId, actuacionId) {
+            const persona = notes.find(item => String(item.id) === String(personId));
+            if (!persona || !Array.isArray(persona.actuaciones)) return;
+            const a = persona.actuaciones.find(item => String(item.id) === String(actuacionId));
+            if (!a) return;
+            const catLabel = getCatLabel(a.categoria);
+            const implicados = Array.isArray(a.implicados) ? a.implicados : [];
+            const implicadosHTML = implicados.length ? implicados.map(imp => {
+                const p = notes.find(item => String(item.id) === String(imp.personaId));
+                if (!p) return '';
+                return `<div class="detail-group" style="margin-bottom:8px; cursor:pointer;" onclick="closeVerActuacionModal(); viewPersonDetail('${p.id}')">
+                    <div class="detail-label">👤 PERSONA IMPLICADA</div>
+                    <div class="detail-value" style="font-weight:700;">${p.nombre || 'Sin nombre'}</div>
+                    <div style="font-size:.78rem;color:var(--accent-gold);margin-top:4px;">🔹 ${imp.implicacion || 'No especificada'}</div>
+                </div>`;
+            }).join('') : '<div style="font-size:.82rem;color:var(--text-muted);">No hay personas implicadas registradas.</div>';
+            document.getElementById('ver-actuacion-content').innerHTML = `
+                <div class="detail-group"><div class="detail-label">🏷️ CATEGORÍA / MOTIVO</div><div class="detail-value">${catLabel}</div></div>
+                <div class="detail-group"><div class="detail-label">🕒 FECHA Y HORA</div><div class="detail-value">${formatFechaHora(a.fecha)}</div></div>
+                <div class="detail-group"><div class="detail-label">📍 LUGAR</div><div class="detail-value">${a.lugar || 'No especificado'}</div></div>
+                <div class="detail-group"><div class="detail-label">📝 HECHOS / DETALLES</div><div class="detail-value" style="white-space:pre-wrap;">${a.hechos || 'Sin detalles.'}</div></div>
+                <div class="detail-label" style="margin:14px 0 6px;">👥 PERSONAS IMPLICADAS</div>
+                ${implicadosHTML}
+                <button class="btn-primary" onclick="closeVerActuacionModal(); openActuacionModal('${persona.id}', '${a.id}')">✏️ Editar Actuación</button>
+            `;
+            document.getElementById('modal-ver-actuacion').classList.add('active');
+        }
+
+        function closeVerActuacionModal() {
+            document.getElementById('modal-ver-actuacion').classList.remove('active');
+        }
+
         function renderActuacionesHTML(persona) {
             if (!persona.actuaciones || persona.actuaciones.length === 0) {
                 return `<div style="font-size:0.85rem; color:var(--text-muted); margin-top:6px; font-style:italic;">No hay intervenciones/actuaciones registradas.</div>`;
@@ -1425,16 +1509,17 @@
                 const catClass = getCatBadgeClass(a.categoria);
                 const catLabel = getCatLabel(a.categoria);
                 return `
-                    <div class="actuacion-card">
+                    <div class="actuacion-card" onclick="openActuacionView('${persona.id}', '${a.id}')">
                         <div class="actuacion-header">
                             <span class="badge-cat ${catClass}">${catLabel}</span>
                             <span style="font-size:0.75rem; color:var(--text-muted);">🕒 ${formatFechaHora(a.fecha)}</span>
                         </div>
                         <div style="font-size:0.85rem; color:#fff; font-weight:600; margin-top:4px;">📍 Lugar: ${a.lugar || 'No especificado'}</div>
                         <div style="font-size:0.85rem; color:#cbd5e1; margin-top:4px; white-space:pre-wrap;">📝 <strong>Hechos:</strong> ${a.hechos || 'Sin detalles.'}</div>
+                        ${(() => { const imp = (a.implicados || []).find(x => String(x.personaId) === String(persona.id)); return imp ? `<div style="font-size:.78rem;color:var(--accent-gold);margin-top:6px;">👤 <strong>Implicación:</strong> ${imp.implicacion || 'No especificada'}</div>` : ''; })()}
                         <div class="actuacion-actions">
-                            <button class="btn-inline" title="Editar actuación" onclick="openActuacionModal('${persona.id}', '${a.id}')">✏️</button>
-                            <button class="btn-inline" style="background:rgba(255,82,82,0.2); color:var(--danger-red); border-color:rgba(255,82,82,0.3);" title="Eliminar actuación" onclick="deleteActuacion('${persona.id}', '${a.id}')">🗑</button>
+                            <button class="btn-inline" title="Editar actuación" onclick="event.stopPropagation(); openActuacionModal('${persona.id}', '${a.id}')">✏️</button>
+                            <button class="btn-inline" style="background:rgba(255,82,82,0.2); color:var(--danger-red); border-color:rgba(255,82,82,0.3);" title="Eliminar actuación" onclick="event.stopPropagation(); deleteActuacion('${persona.id}', '${a.id}')">🗑</button>
                         </div>
                     </div>`;
             }).join('');
@@ -1518,9 +1603,154 @@
         }
 
         /* MODAL Y GESTIÓN DE SUB-FICHA DE ACTUACIONES */
+        const TIPOS_IMPLICACION = [
+            'Denunciante', 'Denunciado', 'Perjudicado', 'Identificado', 'Testigo',
+            'Detenido', 'Víctima', 'Investigado', 'Requirente', 'Acompañante', 'Otro'
+        ];
+
+        function getImplicacionOptions(selected = '') {
+            return TIPOS_IMPLICACION.map(tipo => `<option value="${tipo}" ${tipo === selected ? 'selected' : ''}>${tipo}</option>`).join('');
+        }
+
+        function renderActuacionImplicados() {
+            const c = document.getElementById('actuacion-implicados-list');
+            if (!c) return;
+            if (!currentActuacionImplicados.length) {
+                c.innerHTML = `<div style="font-size:.75rem;color:var(--text-muted);font-style:italic;">No hay personas implicadas añadidas.</div>`;
+                return;
+            }
+            c.innerHTML = currentActuacionImplicados.map((imp, idx) => {
+                const p = notes.find(n => String(n.id) === String(imp.personaId)) || imp.personaData;
+                if (!p) return '';
+                return `<div class="vinculo-card" style="margin-top:6px;">
+                    <div class="vinculo-info">
+                        <div class="vinculo-name">👤 ${p.nombre || 'Sin nombre'}</div>
+                        <div class="vinculo-doc">🪪 ${p.documento || 'SIN DOCUMENTO'} · 📞 ${p.telefono || 'N/A'}</div>
+                        <select onchange="cambiarImplicacionActuacion(${idx}, this.value)" style="margin-top:6px; padding:8px 10px; font-size:.82rem;">${getImplicacionOptions(imp.implicacion || 'Identificado')}</select>
+                    </div>
+                    <div class="vinculo-actions">
+                        <button type="button" class="btn-inline" title="Quitar persona" onclick="quitarPersonaActuacion(${idx})">✕</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function mostrarNuevaPersonaActuacion() {
+            const box = document.getElementById('actuacion-nueva-persona');
+            if (!box) return;
+            box.style.display = box.style.display === 'none' ? 'block' : 'none';
+            if (box.style.display === 'block') document.getElementById('actuacion_nueva_nombre').focus();
+        }
+
+        function limpiarNuevaPersonaActuacion() {
+            ['nombre','documento','lugar_nac','fecha_nac','telefono','padres','domicilio','vehiculo','matricula'].forEach(k => {
+                const el = document.getElementById('actuacion_nueva_' + k);
+                if (el) el.value = '';
+            });
+            currentActuacionNuevaPersonaPhotos = [];
+            renderNuevaPersonaActuacionGallery();
+        }
+
+        function handleNuevaPersonaActuacionPhotos(event) {
+            const files = Array.from(event.target.files || []);
+            if (!files.length) return;
+            let loaded = 0;
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = e => compressImage(e.target.result, 1600, 0.85, b => {
+                    currentActuacionNuevaPersonaPhotos.push(b);
+                    loaded++;
+                    if (loaded === files.length) renderNuevaPersonaActuacionGallery();
+                });
+                reader.readAsDataURL(file);
+            });
+            event.target.value = '';
+        }
+
+        function renderNuevaPersonaActuacionGallery() {
+            const c = document.getElementById('actuacion-nueva-gallery');
+            if (!c) return;
+            c.innerHTML = '';
+            currentActuacionNuevaPersonaPhotos.forEach((img, i) => {
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+                item.innerHTML = `<img src="${img}" alt="Foto nueva persona"><button type="button" class="gallery-delete" onclick="currentActuacionNuevaPersonaPhotos.splice(${i},1); renderNuevaPersonaActuacionGallery();">✕</button>`;
+                c.appendChild(item);
+            });
+        }
+
+        function anadirNuevaPersonaActuacion() {
+            const nombre = document.getElementById('actuacion_nueva_nombre').value.trim();
+            if (!nombre) {
+                alert('Introduce el nombre y apellidos de la nueva persona.');
+                return;
+            }
+            const personaData = {
+                id: 'tmp_' + Date.now().toString() + '_' + Math.random().toString(36).slice(2, 7),
+                fecha_creacion: new Date().toLocaleString('es-ES'),
+                nombre,
+                documento: document.getElementById('actuacion_nueva_documento').value.trim().toUpperCase(),
+                lugar_nac: document.getElementById('actuacion_nueva_lugar_nac').value.trim(),
+                fecha_nac: document.getElementById('actuacion_nueva_fecha_nac').value.trim(),
+                telefono: document.getElementById('actuacion_nueva_telefono').value.trim(),
+                padres: document.getElementById('actuacion_nueva_padres').value.trim(),
+                domicilio: document.getElementById('actuacion_nueva_domicilio').value.trim(),
+                vehiculo: document.getElementById('actuacion_nueva_vehiculo').value.trim(),
+                matricula: document.getElementById('actuacion_nueva_matricula').value.trim().toUpperCase(),
+                fotos: [...currentActuacionNuevaPersonaPhotos],
+                actuaciones: [],
+                vinculos: []
+            };
+            currentActuacionImplicados.push({ personaId: personaData.id, implicacion: 'Identificado', personaData });
+            limpiarNuevaPersonaActuacion();
+            document.getElementById('actuacion-nueva-persona').style.display = 'none';
+            renderActuacionImplicados();
+        }
+
+        function buscarPersonaActuacion() {
+            const term = document.getElementById('actuacion_persona_busqueda').value.trim().toLowerCase();
+            const c = document.getElementById('actuacion-persona-search-results');
+            if (!term) {
+                c.innerHTML = `<div style="font-size:.75rem;color:var(--text-muted);">Escribe un nombre, documento o teléfono para buscar.</div>`;
+                return;
+            }
+            const ya = new Set(currentActuacionImplicados.map(x => String(x.personaId)));
+            const r = notes.filter(n => !ya.has(String(n.id)) && ((n.nombre && n.nombre.toLowerCase().includes(term)) || (n.documento && n.documento.toLowerCase().includes(term)) || (n.telefono && n.telefono.toLowerCase().includes(term)))).slice(0, 20);
+            if (!r.length) {
+                c.innerHTML = `<div style="font-size:.75rem;color:var(--text-muted);">No se ha encontrado ninguna persona.</div>`;
+                return;
+            }
+            c.innerHTML = r.map(n => `<div class="vinculo-search-result" onclick="anadirPersonaActuacion('${n.id}')"><div style="font-weight:700;color:var(--text-white);">👤 ${n.nombre || 'Sin nombre'}</div><div style="font-size:.75rem;color:var(--text-muted);margin-top:3px;">🪪 ${n.documento || 'SIN DOCUMENTO'} · 📞 ${n.telefono || 'N/A'}</div></div>`).join('');
+        }
+
+        function anadirPersonaActuacion(personaId) {
+            if (currentActuacionImplicados.some(x => String(x.personaId) === String(personaId))) return;
+            currentActuacionImplicados.push({ personaId, implicacion: 'Identificado' });
+            document.getElementById('actuacion_persona_busqueda').value = '';
+            document.getElementById('actuacion-persona-search-results').innerHTML = '';
+            document.getElementById('actuacion-nueva-persona').style.display = 'none';
+            limpiarNuevaPersonaActuacion();
+            renderActuacionImplicados();
+        }
+
+        function quitarPersonaActuacion(index) {
+            currentActuacionImplicados.splice(index, 1);
+            renderActuacionImplicados();
+        }
+
+        function cambiarImplicacionActuacion(index, implicacion) {
+            if (currentActuacionImplicados[index]) currentActuacionImplicados[index].implicacion = implicacion;
+        }
+
+        function normalizarImplicadosActuacion(actuacion, personaId) {
+            if (Array.isArray(actuacion.implicados) && actuacion.implicados.length) return actuacion.implicados;
+            return [{ personaId: String(personaId), implicacion: 'Identificado' }];
+        }
+
         function openActuacionModal(personId, actuacionId = null) {
             currentNoteId = personId;
             const n = notes.find(item => String(item.id) === String(personId));
+            currentActuacionImplicados = [];
 
             if (actuacionId && n && n.actuaciones) {
                 const a = n.actuaciones.find(item => String(item.id) === String(actuacionId));
@@ -1531,6 +1761,7 @@
                     document.getElementById('actuacion_fecha').value = a.fecha || '';
                     document.getElementById('actuacion_lugar').value = a.lugar || '';
                     document.getElementById('actuacion_hechos').value = a.hechos || '';
+                    currentActuacionImplicados = normalizarImplicadosActuacion(a, personId).map(x => ({personaId:String(x.personaId), implicacion:x.implicacion || 'Identificado'}));
                 }
             } else {
                 document.getElementById('actuacion-modal-title').innerText = "🚨 Registrar Actuación";
@@ -1541,38 +1772,61 @@
                 document.getElementById('actuacion_fecha').value = now.toISOString().slice(0, 16);
                 document.getElementById('actuacion_lugar').value = '';
                 document.getElementById('actuacion_hechos').value = '';
+                currentActuacionImplicados = [{ personaId:String(personId), implicacion:'Identificado' }];
             }
 
+            document.getElementById('actuacion_persona_busqueda').value = '';
+            document.getElementById('actuacion-persona-search-results').innerHTML = '';
+            renderActuacionImplicados();
             document.getElementById('modal-actuacion').classList.add('active');
         }
 
         function closeActuacionModal() {
             document.getElementById('modal-actuacion').classList.remove('active');
+            currentActuacionImplicados = [];
         }
 
         async function saveActuacionModal() {
             if (!currentNoteId) return;
-
             const n = notes.find(item => String(item.id) === String(currentNoteId));
             if (!n) return;
+            if (!currentActuacionImplicados.length) {
+                alert('Añade al menos una persona implicada en la actuación.');
+                return;
+            }
 
-            const actId = document.getElementById('actuacion_id').value;
+            const actId = document.getElementById('actuacion_id').value || Date.now().toString();
 
+            // Las personas nuevas se incorporan al registro general al guardar la actuación.
+            currentActuacionImplicados.forEach(imp => {
+                if (imp.personaData && !notes.some(n => String(n.id) === String(imp.personaData.id))) {
+                    notes.unshift(imp.personaData);
+                }
+            });
+
+            const implicados = currentActuacionImplicados.map(x => ({ personaId:String(x.personaId), implicacion:x.implicacion || 'Identificado' }));
             const actuacionData = {
-                id: actId || Date.now().toString(),
+                id: actId,
                 categoria: document.getElementById('actuacion_categoria').value,
                 fecha: document.getElementById('actuacion_fecha').value,
                 lugar: document.getElementById('actuacion_lugar').value.trim(),
-                hechos: document.getElementById('actuacion_hechos').value.trim()
+                hechos: document.getElementById('actuacion_hechos').value.trim(),
+                implicados
             };
 
-            if (!n.actuaciones) n.actuaciones = [];
+            // Una actuación es única. Se elimina su copia anterior de todas las fichas y se vuelve a distribuir a sus implicados.
+            notes.forEach(persona => {
+                if (Array.isArray(persona.actuaciones)) {
+                    persona.actuaciones = persona.actuaciones.filter(a => String(a.id) !== String(actId));
+                }
+            });
 
-            if (actId) {
-                n.actuaciones = n.actuaciones.map(a => String(a.id) === String(actId) ? actuacionData : a);
-            } else {
-                n.actuaciones.unshift(actuacionData);
-            }
+            implicados.forEach(imp => {
+                const persona = notes.find(x => String(x.id) === String(imp.personaId));
+                if (!persona) return;
+                if (!Array.isArray(persona.actuaciones)) persona.actuaciones = [];
+                persona.actuaciones.unshift(JSON.parse(JSON.stringify(actuacionData)));
+            });
 
             await saveIDBData('id_notes', notes);
             await saveToLocalFolder();
@@ -1582,14 +1836,15 @@
         }
 
         async function deleteActuacion(personId, actuacionId) {
-            if (confirm("¿Deseas eliminar esta actuación policial del historial?")) {
-                const n = notes.find(item => String(item.id) === String(personId));
-                if (n && n.actuaciones) {
-                    n.actuaciones = n.actuaciones.filter(a => String(a.id) !== String(actuacionId));
-                    await saveIDBData('id_notes', notes);
-                    await saveToLocalFolder();
-                    openPersonActuacionesScreen(personId);
-                }
+            if (confirm("¿Deseas eliminar esta actuación policial del historial de todas las personas implicadas?")) {
+                notes.forEach(n => {
+                    if (Array.isArray(n.actuaciones)) {
+                        n.actuaciones = n.actuaciones.filter(a => String(a.id) !== String(actuacionId));
+                    }
+                });
+                await saveIDBData('id_notes', notes);
+                await saveToLocalFolder();
+                openPersonActuacionesScreen(personId);
             }
         }
 
@@ -2340,6 +2595,14 @@
                         const splitText = doc.splitTextToSize(a.hechos || 'Sin detalles.', 165);
                         doc.text(splitText, 20, y);
                         y += (splitText.length * 5) + 6;
+                        const impPDF = (a.implicados || []).find(x => String(x.personaId) === String(n.id));
+                        if (impPDF) {
+                            doc.setFont("helvetica", "bold");
+                            doc.text("Implicación:", 20, y);
+                            doc.setFont("helvetica", "normal");
+                            doc.text(impPDF.implicacion || 'No especificada', 43, y);
+                            y += 6;
+                        }
                     });
                 } else {
                     doc.setFontSize(10);
@@ -2508,7 +2771,8 @@
                 if (n.actuaciones && n.actuaciones.length > 0) {
                     msg += `🚨 *ANTECEDENTES / ACTUACIONES (${n.actuaciones.length}):*\n`;
                     n.actuaciones.forEach((a, i) => {
-                        msg += `\n*${i+1}. ${getCatLabel(a.categoria)}* (${formatFechaHora(a.fecha)})\n📍 ${a.lugar || 'Lugar N/A'}\n📝 ${a.hechos || 'Sin datos'}\n`;
+                        const impWA = (a.implicados || []).find(x => String(x.personaId) === String(n.id));
+                        msg += `\n*${i+1}. ${getCatLabel(a.categoria)}* (${formatFechaHora(a.fecha)})\n📍 ${a.lugar || 'Lugar N/A'}\n👤 Implicación: ${impWA ? (impWA.implicacion || 'No especificada') : 'No especificada'}\n📝 ${a.hechos || 'Sin datos'}\n`;
                     });
                 } else {
                     msg += `🚨 *Sin actuaciones/antecedentes registrados.*`;
