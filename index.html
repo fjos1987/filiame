@@ -226,10 +226,13 @@
         .list-tools { display:flex; gap:8px; margin: 0 0 10px; align-items:center; }
         .list-tools input { flex:1; min-width:0; }
         .list-tools select { width:auto; max-width:44%; min-width:125px; padding:10px 8px; font-size:.78rem; }
-        .compact-record { padding:8px 42px 8px 11px !important; margin-bottom:5px !important; border-radius:9px !important; min-height:0; }
+        .compact-record { padding:8px 42px 8px 11px !important; margin-bottom:0 !important; border-radius:0 !important; border:0 !important; border-bottom:1px solid var(--border-subtle) !important; min-height:0; background:transparent !important; }
+        .compact-record:first-child { border-top:1px solid var(--border-subtle) !important; }
         .compact-record .card-header-row { margin:0; padding-right:0; min-height:25px; display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
         .compact-record .card-title { font-size:.91rem; line-height:1.25; display:block; overflow-wrap:anywhere; flex:1; min-width:0; }
-        .compact-record .compact-meta { color:var(--text-muted); font-size:.74rem; margin-top:3px; line-height:1.25; }
+        .compact-record .person-title-icon, .compact-record .person-meta-icon { display:inline-block; width:1.25em; margin-right:4px; text-align:center; opacity:.88; }
+        .compact-record .compact-meta { color:var(--text-muted); font-size:.74rem; margin-top:3px; line-height:1.35; overflow-wrap:anywhere; }
+        .compact-record .meta-piece { display:inline; }
         .person-acts-summary { flex-shrink:0; max-width:48%; text-align:right; color:var(--text-muted); font-size:.65rem; line-height:1.35; padding-right:1px; }
         .person-acts-summary strong { display:block; color:var(--text-white); font-size:.68rem; font-weight:700; }
         .person-acts-summary span { display:block; }
@@ -319,6 +322,15 @@
         .gallery-btn { background: none; border: none; color: #fff; font-size: 0.75rem; cursor: pointer; padding: 2px 4px; }
 
         /* DETALLE */
+        .person-identity-header { display:flex; align-items:center; gap:14px; padding:12px; margin-bottom:10px; border:1px solid var(--border-subtle); border-radius:var(--radius-medium); background:var(--card-glass); }
+        .person-face-wrap { width:86px; flex:0 0 86px; text-align:center; }
+        .person-face { width:82px; height:96px; border-radius:10px; border:1px solid var(--card-border-glow); object-fit:cover; background:rgba(12,18,32,.85); display:flex; align-items:center; justify-content:center; }
+        .person-face-placeholder { width:82px; height:96px; border-radius:10px; border:1px dashed var(--card-border-glow); background:rgba(12,18,32,.85); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; color:var(--text-muted); font-size:1.6rem; }
+        .person-face-actions { margin-top:5px; }
+        .person-face-btn { background:transparent; border:1px solid var(--border-subtle); color:var(--accent-gold); border-radius:7px; padding:4px 6px; font-size:.66rem; cursor:pointer; }
+        .person-identity-name { min-width:0; flex:1; color:var(--accent-gold); font-size:1.12rem; font-weight:800; overflow-wrap:anywhere; }
+        .btn-share-compact { display:flex; width:fit-content; align-items:center; gap:5px; background:rgba(224,169,109,.08); color:var(--text-muted); border:1px solid var(--border-subtle); border-radius:7px; padding:5px 8px; margin:0 0 10px auto; font-size:.72rem; cursor:pointer; }
+        .btn-share-compact:hover { color:var(--accent-gold); border-color:var(--card-border-glow); }
         .detail-group { background: var(--card-glass); padding: 12px 14px; border-radius: var(--radius-medium); margin-bottom: 8px; border: 1px solid var(--border-subtle); }
         .detail-label { font-size: 0.75rem; color: var(--accent-gold); font-weight: 700; text-transform: uppercase; }
         .detail-value { font-size: 0.95rem; color: var(--text-white); margin-top: 4px; word-break: break-word; overflow-wrap: break-word; }
@@ -529,6 +541,10 @@
                 <div class="tabs-header">
                     <button id="tab-personas" class="tab-btn active" onclick="switchRecordTab('personas')">👥 Personas</button>
                     <button id="tab-vehiculos" class="tab-btn" onclick="switchRecordTab('vehiculos')">🚘 Vehículos</button>
+                </div>
+                <div id="person-import-tools" style="display:flex;justify-content:flex-end;margin:0 0 10px;">
+                    <button type="button" class="btn-inline" onclick="document.getElementById('person-import-file').click()">📥 Importar persona compartida</button>
+                    <input id="person-import-file" type="file" accept=".json,application/json" style="display:none" onchange="importSharedPerson(event)">
                 </div>
 
                 <div class="list-tools">
@@ -974,6 +990,8 @@
         </div>
     </div>
 
+    <input id="person-face-file" type="file" accept="image/*" capture="user" style="display:none" onchange="handlePersonFacePhoto(event)">
+
     <script>
         const PIN_CORRECTO = "130037";
         let notes = [];
@@ -1219,6 +1237,8 @@
             document.getElementById('search-bar').value = '';
             const peopleSort = document.getElementById('people-sort');
             if (peopleSort) peopleSort.style.display = tabName === 'personas' ? '' : 'none';
+            const importTools = document.getElementById('person-import-tools');
+            if (importTools) importTools.style.display = tabName === 'personas' ? 'flex' : 'none';
             renderCurrentTab();
         }
 
@@ -1404,13 +1424,13 @@
                 card.innerHTML = `
                     <button class="btn-delete-card" title="Eliminar persona" data-id="${n.id}">🗑</button>
                     <div class="card-header-row">
-                        <span class="card-title">${n.nombre || 'Persona sin nombre'}</span>
+                        <span class="card-title"><span class="person-title-icon" aria-hidden="true">👤</span>${n.nombre || 'Persona sin nombre'}</span>
                         <div class="person-acts-summary">
                             <strong>Actuaciones: ${actuacionesUnicasPersona.length} registrada(s)</strong>
                             <span>Última: ${ultimaActuacionTxt}</span>
                         </div>
                     </div>
-                    <div class="compact-meta">${n.documento || 'Sin documento'}${n.telefono ? ' · ' + n.telefono : ''}</div>
+                    <div class="compact-meta"><span class="meta-piece"><span class="person-meta-icon" aria-hidden="true">🪪</span>${n.documento || 'Sin documento'}</span>${n.telefono ? ' <span class="meta-piece">· <span class="person-meta-icon" aria-hidden="true">📞</span>' + n.telefono + '</span>' : ''}</div>
                 `;
 
                 const deleteBtn = card.querySelector('.btn-delete-card');
@@ -1435,6 +1455,34 @@
             }
         }
 
+        async function handlePersonFacePhoto(event) {
+            const file = event.target.files && event.target.files[0];
+            event.target.value = '';
+            if (!file || !currentNoteId) return;
+            const persona = notes.find(item => String(item.id) === String(currentNoteId));
+            if (!persona) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                compressImage(e.target.result, 700, 0.86, async (compressedBase64) => {
+                    persona.fotoCara = compressedBase64;
+                    await saveIDBData('id_notes', notes);
+                    await saveToLocalFolder();
+                    viewPersonDetail(persona.id);
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function removePersonFacePhoto(personId) {
+            const persona = notes.find(item => String(item.id) === String(personId));
+            if (!persona || !persona.fotoCara) return;
+            if (!confirm('¿Quitar la fotografía de cara de esta ficha?')) return;
+            persona.fotoCara = '';
+            await saveIDBData('id_notes', notes);
+            await saveToLocalFolder();
+            viewPersonDetail(persona.id);
+        }
+
         /* VISTA DETALLADA DE PERSONA CON HISTORIAL DE ACTUACIONES */
         function viewPersonDetail(id) {
             currentNoteId = id;
@@ -1457,7 +1505,14 @@
             let actuacionesHTML = renderActuacionesHTML(n);
 
             container.innerHTML = `
-                <div class="detail-group"><div class="detail-label">👤 Nombre Completo</div><div class="detail-value" style="font-size:1.15rem; font-weight:bold; color:var(--accent-gold);">${n.nombre || '-'}</div></div>
+                <button type="button" class="btn-share-compact" onclick="exportSharedPerson('${n.id}')" title="Compartir ficha y actuaciones">📤 Compartir ficha y actuaciones</button>
+                <div class="person-identity-header">
+                    <div class="person-face-wrap">
+                        ${n.fotoCara ? `<img class="person-face" src="${n.fotoCara}" alt="Fotografía de ${n.nombre || 'la persona'}" onclick="openLightbox('${n.fotoCara}')">` : `<div class="person-face-placeholder" aria-label="Sin fotografía de cara"><span>👤</span><span style="font-size:.58rem">Sin foto</span></div>`}
+                        <div class="person-face-actions"><button type="button" class="person-face-btn" onclick="document.getElementById('person-face-file').click()">📷 ${n.fotoCara ? 'Cambiar' : 'Añadir cara'}</button>${n.fotoCara ? `<button type="button" class="person-face-btn" onclick="removePersonFacePhoto('${n.id}')" title="Quitar foto">✕</button>` : ''}</div>
+                    </div>
+                    <div class="person-identity-name">${n.nombre || 'Persona sin nombre'}</div>
+                </div>
                 <div class="detail-group"><div class="detail-label">🪪 Nº Documento</div><div class="detail-value">${n.documento || '-'}</div></div>
                 <div class="detail-group"><div class="detail-label">🌍 Lugar y Fecha Nacimiento</div><div class="detail-value">${n.lugar_nac || '-'} ${n.fecha_nac ? '(' + n.fecha_nac + ')' : ''}</div></div>
                 <div class="detail-group"><div class="detail-label">📞 Teléfono</div><div class="detail-value">${n.telefono || '-'}</div></div>
@@ -1536,17 +1591,27 @@
                     <div class="detail-value" style="font-weight:700;">${p.nombre || 'Sin nombre'}</div>
                     <div style="font-size:.78rem;color:var(--accent-gold);margin-top:4px;">🔹 ${imp.implicacion || 'No especificada'}</div>
                 </div>`;
-            }).join('') : '<div style="font-size:.82rem;color:var(--text-muted);">No hay personas implicadas registradas.</div>';
+            }).join('') : '';
+            const implicadosExternosHTML = (Array.isArray(a.implicadosExternos) ? a.implicadosExternos : []).map(imp => `
+                <div class="detail-group" style="margin-bottom:8px;">
+                    <div class="detail-label">👤 PERSONA IMPLICADA (NO IMPORTADA COMO FICHA)</div>
+                    <div class="detail-value" style="font-weight:700;">${imp.nombre || 'Persona no identificada'}</div>
+                    ${imp.documento ? `<div class="detail-value">Documento: ${imp.documento}</div>` : ''}
+                    <div style="font-size:.78rem;color:var(--accent-gold);margin-top:4px;">🔹 ${imp.implicacion || 'No especificada'}</div>
+                </div>`).join('');
             const avisoOrigen = a.avisoId ? avisos.find(x => String(x.id) === String(a.avisoId)) : null;
             document.getElementById('ver-actuacion-content').innerHTML = `
                 ${a.registro ? `<div class="detail-group"><div class="detail-label">🔢 NÚMERO DE INTERVENCIÓN</div><div class="detail-value" style="color:var(--accent-gold);font-weight:800;">${a.registro}</div></div>` : ''}
+                ${a.registroOrigen && a.registroOrigen !== a.registro ? `<div class="detail-group"><div class="detail-label">🔗 NÚMERO DE ORIGEN (OTRA FILIAME)</div><div class="detail-value">${a.registroOrigen}</div></div>` : ''}
                 ${avisoOrigen ? `<div class="detail-group"><div class="detail-label">📞 AVISO DE ORIGEN</div><div class="detail-value" style="color:var(--accent-gold);font-weight:700;cursor:pointer;text-decoration:underline;" onclick="closeVerActuacionModal(); openAvisoModal('${avisoOrigen.id}')">${avisoOrigen.registro || a.avisoRegistro || 'Aviso vinculado'} · Abrir aviso</div><div style="font-size:.82rem;color:var(--text-muted);margin-top:4px;">${avisoOrigen.comunicante || ''} · ${avisoOrigen.motivo || ''}</div></div>` : (a.avisoRegistro ? `<div class="detail-group"><div class="detail-label">📞 AVISO DE ORIGEN</div><div class="detail-value">${a.avisoRegistro}</div></div>` : '<div class="detail-group"><div class="detail-label">📌 PROCEDENCIA</div><div class="detail-value">Actuación directa (sin aviso)</div></div>')}
                 <div class="detail-group"><div class="detail-label">🏷️ CATEGORÍA / MOTIVO</div><div class="detail-value">${catLabel}</div></div>
                 <div class="detail-group"><div class="detail-label">🕒 FECHA Y HORA</div><div class="detail-value">${formatFechaHora(a.fecha)}</div></div>
                 <div class="detail-group"><div class="detail-label">📍 LUGAR</div><div class="detail-value">${a.lugar || 'No especificado'}</div></div>
                 <div class="detail-group"><div class="detail-label">📝 HECHOS / DETALLES</div><div class="detail-value" style="white-space:pre-wrap;">${a.hechos || 'Sin detalles.'}</div></div>
                 <div class="detail-label" style="margin:14px 0 6px;">👥 PERSONAS IMPLICADAS</div>
-                ${implicadosHTML}
+                ${implicadosHTML || ''}
+                ${implicadosExternosHTML}
+                ${(!implicadosHTML && !implicadosExternosHTML) ? '<div style="font-size:.82rem;color:var(--text-muted);">No hay personas implicadas registradas.</div>' : ''}
                 <button class="btn-primary" onclick="closeVerActuacionModal(); openActuacionModal('${persona.id}', '${a.id}')">✏️ Editar Actuación</button>
             `;
             document.getElementById('modal-ver-actuacion').classList.add('active');
@@ -1618,6 +1683,7 @@
             doc.setTextColor(0, 0, 0);
 
             section('Número de intervención', a.registro || 'Sin numerar');
+            if (a.registroOrigen && a.registroOrigen !== a.registro) section('Número de intervención de origen (otra FILIAME)', a.registroOrigen);
             section('Categoría / motivo', getCatLabel(a.categoria));
             section('Fecha y hora', formatFechaHora(a.fecha));
             section('Lugar', a.lugar || 'No especificado');
@@ -1675,6 +1741,11 @@
                     y += 3;
                 });
             }
+            (Array.isArray(a.implicadosExternos) ? a.implicadosExternos : []).forEach((imp, index) => {
+                ensureSpace(18);
+                section(`Implicado externo ${implicados.length + index + 1}`, `${imp.nombre || 'Persona no identificada'}${imp.documento ? ` · Documento: ${imp.documento}` : ''}${imp.telefono ? ` · Teléfono: ${imp.telefono}` : ''}
+Implicación: ${imp.implicacion || 'No especificada'}`);
+            });
 
             const fileName = `Ficha_Actuacion_${String(a.registro || a.id || 'FILIAME').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
             const blob = doc.output('blob');
@@ -2020,7 +2091,10 @@
                 registro,
                 avisoId: avisoActual ? avisoActual.id : (accionAnterior ? accionAnterior.avisoId || null : null),
                 avisoRegistro: avisoActual ? avisoActual.registro : (accionAnterior ? accionAnterior.avisoRegistro || null : null),
-                implicados
+                implicados,
+                implicadosExternos: accionAnterior && Array.isArray(accionAnterior.implicadosExternos) ? accionAnterior.implicadosExternos : [],
+                origenImportacionKey: accionAnterior ? (accionAnterior.origenImportacionKey || null) : null,
+                registroOrigen: accionAnterior ? (accionAnterior.registroOrigen || null) : null
             };
 
             // Una actuación es única. Se elimina su copia anterior de todas las fichas y se vuelve a distribuir a sus implicados.
@@ -3086,6 +3160,199 @@
 
             const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
             window.open(url, '_blank');
+        }
+
+        /* COMPARTIR E IMPORTAR FICHA INDIVIDUAL CON HISTORIAL DE ACTUACIONES */
+        function normalizarClavePersona(valor) {
+            return String(valor || '').trim().toLocaleLowerCase('es-ES').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+        }
+
+        function buscarPersonaCoincidente(datos) {
+            const documento = normalizarClavePersona(datos && datos.documento);
+            if (documento) {
+                const porDocumento = notes.find(n => normalizarClavePersona(n.documento) === documento);
+                if (porDocumento) return porDocumento;
+            }
+            const nombre = normalizarClavePersona(datos && datos.nombre);
+            const telefono = normalizarClavePersona(datos && datos.telefono);
+            if (!nombre) return null;
+            return notes.find(n => normalizarClavePersona(n.nombre) === nombre &&
+                (!telefono || !normalizarClavePersona(n.telefono) || normalizarClavePersona(n.telefono) === telefono)) || null;
+        }
+
+        function claveOrigenActuacion(actuacion, persona) {
+            if (actuacion && actuacion.origenImportacionKey) return String(actuacion.origenImportacionKey);
+            const identidad = normalizarClavePersona(persona && (persona.documento || persona.nombre)) || 'persona-sin-identificar';
+            return `${identidad}|${String(actuacion && actuacion.id || '')}`;
+        }
+
+        async function exportSharedPerson(personId) {
+            const persona = notes.find(n => String(n.id) === String(personId));
+            if (!persona) { alert('No se encuentra la ficha de la persona.'); return; }
+            const actuaciones = (Array.isArray(persona.actuaciones) ? persona.actuaciones : []).map(a => ({
+                ...JSON.parse(JSON.stringify(a)),
+                origenImportacionKey: claveOrigenActuacion(a, persona),
+                registroOrigen: a.registroOrigen || a.registro || null,
+                avisoId: null,
+                avisoRegistro: a.avisoRegistro || null,
+                implicadosExportados: [
+                    ...(Array.isArray(a.implicados) ? a.implicados : []).map(imp => {
+                        const p = notes.find(n => String(n.id) === String(imp.personaId));
+                        return {
+                            nombre: p ? (p.nombre || '') : '',
+                            documento: p ? (p.documento || '') : '',
+                            telefono: p ? (p.telefono || '') : '',
+                            implicacion: imp.implicacion || 'No especificada',
+                            esPersonaCompartida: !!p && String(p.id) === String(persona.id)
+                        };
+                    }),
+                    ...(Array.isArray(a.implicadosExternos) ? a.implicadosExternos.map(imp => ({
+                        nombre: imp.nombre || '', documento: imp.documento || '', telefono: imp.telefono || '',
+                        implicacion: imp.implicacion || 'No especificada', esPersonaCompartida: false
+                    })) : [])
+                ]
+            }));
+            const payload = {
+                tipo: 'FILIAME_PERSONA_COMPARTIDA',
+                version: 1,
+                fechaExportacion: new Date().toISOString(),
+                persona: {
+                    nombre: persona.nombre || '', documento: persona.documento || '',
+                    lugar_nac: persona.lugar_nac || '', fecha_nac: persona.fecha_nac || '',
+                    telefono: persona.telefono || '', padres: persona.padres || '',
+                    domicilio: persona.domicilio || '', vehiculo: persona.vehiculo || '',
+                    matricula: persona.matricula || '', fotos: Array.isArray(persona.fotos) ? persona.fotos : [], fotoCara: persona.fotoCara || ''
+                },
+                actuaciones
+            };
+            const fileName = `FILIAME_persona_${(persona.nombre || 'registro').trim().replace(/[^a-z0-9_-]+/gi, '_').slice(0,50)}.json`;
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+            const file = new File([blob], fileName, { type: 'application/json' });
+            let puedeCompartir = !!navigator.share;
+            try { if (puedeCompartir && navigator.canShare) puedeCompartir = navigator.canShare({ files: [file] }); } catch (err) { puedeCompartir = false; }
+            if (puedeCompartir) {
+                try {
+                    await navigator.share({ files: [file], title: 'Ficha compartida de FILIAME', text: `Ficha y actuaciones de ${persona.nombre || 'persona registrada'}` });
+                    return;
+                } catch (err) {
+                    if (err && err.name === 'AbortError') return;
+                }
+            }
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = fileName; a.style.display = 'none';
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1500);
+            alert('Archivo preparado. Ahora puedes enviarlo a tu compañero.');
+        }
+
+        function importSharedPerson(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            const input = event.target;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!data || data.tipo !== 'FILIAME_PERSONA_COMPARTIDA' || data.version !== 1 || !data.persona || !Array.isArray(data.actuaciones)) {
+                        throw new Error('Formato no reconocido');
+                    }
+                    const datosPersona = data.persona;
+                    if (!String(datosPersona.nombre || '').trim() && !String(datosPersona.documento || '').trim()) {
+                        alert('El archivo no contiene nombre ni documento para identificar a la persona.');
+                        return;
+                    }
+                    const existente = buscarPersonaCoincidente(datosPersona);
+                    const actuacionesYaImportadas = new Set(obtenerActuacionesUnicas().map(a => a.origenImportacionKey).filter(Boolean).map(String));
+                    const nuevas = data.actuaciones.filter(a => !actuacionesYaImportadas.has(claveOrigenActuacion(a, datosPersona)));
+                    const pregunta = existente
+                        ? `La persona ya existe en tu registro: ${existente.nombre || datosPersona.nombre}.\n\nSe añadirán ${nuevas.length} actuación(es) nueva(s) de ${data.actuaciones.length} recibida(s), sin duplicar las ya importadas. No se sobrescribirán los datos de la ficha existente. ¿Continuar?`
+                        : `Se creará una ficha para ${datosPersona.nombre || datosPersona.documento} y se añadirán ${nuevas.length} actuación(es) nueva(s) de ${data.actuaciones.length} recibida(s). No se importarán los avisos originales ni se crearán fichas completas de los demás implicados. ¿Continuar?`;
+                    if (!confirm(pregunta)) return;
+
+                    let personaDestino = existente;
+                    if (!personaDestino) {
+                        personaDestino = {
+                            ...datosPersona,
+                            id: Date.now().toString() + '_' + Math.random().toString(36).slice(2, 8),
+                            vinculos: [], actuaciones: []
+                        };
+                        notes.unshift(personaDestino);
+                    } else if (!Array.isArray(personaDestino.actuaciones)) {
+                        personaDestino.actuaciones = [];
+                    }
+                    if (!personaDestino.fotoCara && datosPersona.fotoCara) personaDestino.fotoCara = datosPersona.fotoCara;
+
+                    let importadas = 0;
+                    let duplicadas = 0;
+                    for (const original of nuevas) {
+                        const sourceKey = claveOrigenActuacion(original, datosPersona);
+                        // Cada acción recibe un ID local y un INT- nuevo; el número de origen se conserva solo como referencia.
+                        const fechaAnio = String(original.fecha || '').match(/^(\d{4})/);
+                        const anio = fechaAnio ? Number(fechaAnio[1]) : new Date().getFullYear();
+                        const nuevoId = Date.now().toString() + '_' + Math.random().toString(36).slice(2, 9) + '_' + importadas;
+                        const localImplicados = [];
+                        const externos = [];
+                        const implicadosExportados = Array.isArray(original.implicadosExportados) ? original.implicadosExportados : [];
+                        implicadosExportados.forEach(imp => {
+                            const coincideCompartida = imp.esPersonaCompartida || (
+                                normalizarClavePersona(imp.documento) && normalizarClavePersona(imp.documento) === normalizarClavePersona(datosPersona.documento)
+                            );
+                            const local = coincideCompartida ? personaDestino : buscarPersonaCoincidente(imp);
+                            if (local) {
+                                if (!localImplicados.some(x => String(x.personaId) === String(local.id))) {
+                                    localImplicados.push({ personaId: String(local.id), implicacion: imp.implicacion || 'Identificado' });
+                                }
+                            } else {
+                                externos.push({ nombre: imp.nombre || 'Persona no identificada', documento: imp.documento || '', telefono: imp.telefono || '', implicacion: imp.implicacion || 'No especificada' });
+                            }
+                        });
+                        const implicacionPersona = implicadosExportados.find(imp => imp.esPersonaCompartida || (
+                            normalizarClavePersona(imp.documento) && normalizarClavePersona(imp.documento) === normalizarClavePersona(datosPersona.documento)
+                        ));
+                        if (!localImplicados.some(x => String(x.personaId) === String(personaDestino.id))) {
+                            localImplicados.unshift({ personaId: String(personaDestino.id), implicacion: implicacionPersona ? (implicacionPersona.implicacion || 'Identificado') : 'Identificado' });
+                        }
+                        const actuacion = {
+                            id: nuevoId,
+                            categoria: original.categoria || 'otro',
+                            fecha: original.fecha || '',
+                            lugar: original.lugar || '',
+                            hechos: original.hechos || '',
+                            registro: siguienteRegistro('INT', anio),
+                            registroOrigen: original.registroOrigen || original.registro || null,
+                            origenImportacionKey: sourceKey,
+                            avisoId: null,
+                            avisoRegistro: original.avisoRegistro || null,
+                            implicados: localImplicados,
+                            implicadosExternos: externos
+                        };
+                        // Mantener el mismo ID/registro local en el historial de cada implicado que ya exista en esta base.
+                        localImplicados.forEach(imp => {
+                            const personaLocal = notes.find(n => String(n.id) === String(imp.personaId));
+                            if (!personaLocal) return;
+                            if (!Array.isArray(personaLocal.actuaciones)) personaLocal.actuaciones = [];
+                            const yaExiste = personaLocal.actuaciones.some(a => a.origenImportacionKey && String(a.origenImportacionKey) === sourceKey);
+                            if (!yaExiste) personaLocal.actuaciones.unshift(JSON.parse(JSON.stringify(actuacion)));
+                            else duplicadas++;
+                        });
+                        importadas++;
+                    }
+
+                    await saveIDBData('id_notes', notes);
+                    await saveToLocalFolder();
+                    input.value = '';
+                    filterCurrentTab();
+                    alert(`✅ Importación completada.\nPersona: ${personaDestino.nombre || personaDestino.documento}\nActuaciones nuevas: ${importadas}\nReferencias repetidas omitidas: ${data.actuaciones.length - nuevas.length}`);
+                    viewPersonDetail(personaDestino.id);
+                } catch (err) {
+                    console.error('Error importando ficha compartida:', err);
+                    alert('⚠️ No se pudo importar el archivo. Comprueba que sea una ficha compartida de FILIAME válida.');
+                } finally {
+                    input.value = '';
+                }
+            };
+            reader.readAsText(file);
         }
 
         /* BACKUP JSON */
