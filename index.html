@@ -222,6 +222,31 @@
             padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; cursor: pointer; font-weight: 600;
         }
 
+        /* LISTADOS COMPACTOS */
+        .list-tools { display:flex; gap:8px; margin: 0 0 10px; align-items:center; }
+        .list-tools input { flex:1; min-width:0; }
+        .list-tools select { width:auto; max-width:44%; min-width:125px; padding:10px 8px; font-size:.78rem; }
+        .compact-record { padding:8px 42px 8px 11px !important; margin-bottom:5px !important; border-radius:9px !important; min-height:0; }
+        .compact-record .card-header-row { margin:0; padding-right:0; min-height:25px; display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+        .compact-record .card-title { font-size:.91rem; line-height:1.25; display:block; overflow-wrap:anywhere; flex:1; min-width:0; }
+        .compact-record .compact-meta { color:var(--text-muted); font-size:.74rem; margin-top:3px; line-height:1.25; }
+        .person-acts-summary { flex-shrink:0; max-width:48%; text-align:right; color:var(--text-muted); font-size:.65rem; line-height:1.35; padding-right:1px; }
+        .person-acts-summary strong { display:block; color:var(--text-white); font-size:.68rem; font-weight:700; }
+        .person-acts-summary span { display:block; }
+        @media (max-width:420px) { .person-acts-summary { max-width:45%; font-size:.60rem; } .person-acts-summary strong { font-size:.63rem; } }
+        .compact-record .btn-delete-card { top:7px; right:7px; width:27px; height:27px; border-radius:6px; }
+        .aviso-compact { padding:8px 9px !important; margin-bottom:5px !important; border-radius:9px !important; }
+        .aviso-compact .btn-delete-card { top:8px; right:8px; width:26px; height:26px; }
+        .aviso-summary { display:flex; align-items:center; gap:8px; padding-right:29px; cursor:pointer; }
+        .aviso-summary-main { flex:1; min-width:0; }
+        .aviso-summary-title { font-size:.88rem; font-weight:800; color:var(--text-white); line-height:1.25; }
+        .aviso-summary-meta { font-size:.73rem; color:var(--text-muted); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .aviso-summary-side { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
+        .aviso-detail-toggle { padding:3px 6px; font-size:.68rem; }
+        .aviso-extra { display:none; border-top:1px solid var(--border-subtle); margin-top:8px; padding-top:7px; }
+        .aviso-extra.open { display:block; }
+        @media (max-width:420px) { .list-tools { flex-wrap:wrap; } .list-tools select { max-width:none; width:100%; } }
+
         /* TARJETAS DE REGISTRO */
         .card {
             background: var(--card-glass); border: 1px solid var(--border-subtle); border-radius: var(--radius-medium);
@@ -506,8 +531,14 @@
                     <button id="tab-vehiculos" class="tab-btn" onclick="switchRecordTab('vehiculos')">🚘 Vehículos</button>
                 </div>
 
-                <input type="text" id="search-bar" placeholder="🔍 Buscar nombre, DNI, matrícula..." oninput="filterCurrentTab()" style="margin-bottom: 15px;">
-                
+                <div class="list-tools">
+                    <input type="text" id="search-bar" placeholder="🔍 Nombre, documento, teléfono o matrícula..." oninput="filterCurrentTab()" style="margin:0;">
+                    <select id="people-sort" aria-label="Ordenar personas" onchange="filterCurrentTab()" style="margin:0;">
+                        <option value="az">Nombre A–Z</option>
+                        <option value="za">Nombre Z–A</option>
+                        <option value="actuaciones">Más actuaciones</option>
+                    </select>
+                </div>
                 <div id="records-list"></div>
             </div>
 
@@ -522,7 +553,14 @@
                     </div>
                     <button class="btn-inline" style="padding: 8px 12px;" onclick="openAvisoModal()">➕ Nuevo Aviso</button>
                 </div>
-
+                <div class="list-tools aviso-list-tools">
+                    <input type="text" id="avisos-search" placeholder="🔍 Buscar número, motivo, lugar..." oninput="renderAvisos()" style="margin:0;">
+                    <select id="avisos-sort" aria-label="Ordenar avisos" onchange="renderAvisos()" style="margin:0;">
+                        <option value="recientes">Más recientes</option>
+                        <option value="antiguos">Más antiguos</option>
+                        <option value="numero">Número de aviso</option>
+                    </select>
+                </div>
                 <div id="avisos-list"></div>
             </div>
 
@@ -731,7 +769,10 @@
     <div id="modal-ver-actuacion" class="modal-overlay">
         <div class="modal-content">
             <button class="lightbox-close" style="position:absolute; top:15px; right:15px;" onclick="closeVerActuacionModal()">✕</button>
-            <h3 style="margin-top:0; color:var(--accent-gold); font-size:1.1rem; text-transform:uppercase;">🚨 Ficha de Actuación</h3>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 42px 12px 0;">
+                <h3 style="margin:0;color:var(--accent-gold);font-size:1.1rem;text-transform:uppercase;">🚨 Ficha de Actuación</h3>
+                <button type="button" title="Generar y compartir PDF" aria-label="Generar y compartir PDF de la actuación" onclick="exportActuacionPDF()" style="flex:0 0 auto;width:42px;height:42px;border-radius:10px;border:1px solid var(--card-border);background:rgba(224,169,109,.14);color:var(--accent-gold);font-size:1.35rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">🖨️</button>
+            </div>
             <div id="ver-actuacion-content"></div>
         </div>
     </div>
@@ -745,12 +786,17 @@
 
             <div class="label">🏷️ Categoría / Motivo</div>
             <select id="actuacion_categoria">
-                <option value="identificacion">Identificación</option>
-                <option value="trafico">Tráfico</option>
-                <option value="incidencia">Incidencia</option>
-                <option value="alarma">Alarma / Alerta</option>
+                <option value="agresion_discusion">Agresión/Discusión</option>
+                <option value="robos_hurtos">Robos / Hurtos</option>
+                <option value="violencia_genero">Violencia de genero</option>
+                <option value="alcoholemia">Alcoholemia</option>
                 <option value="seguridad">Seguridad Ciudadana</option>
-                <option value="otro">Otro</option>
+                <option value="trafico">Tráfico</option>
+                <option value="okupas">Okupas</option>
+                <option value="identificacion">Identificación</option>
+                <option value="ordenanzas">Ordenanzas</option>
+                <option value="desobediencia_atentado">Desobediencia/Atentado</option>
+                <option value="otro">Otros</option>
             </select>
 
             <div class="label">🕒 Fecha y Hora de la Intervención</div>
@@ -942,6 +988,7 @@
         let currentActiveTab = 'personas'; // 'personas' | 'vehiculos'
         let currentDetailType = 'person'; // 'person' | 'vehicle'
         let currentActuacionImplicados = [];
+        let currentActuacionAvisoId = null;
         let currentActuacionNuevaPersonaPhotos = [];
 
         let directoryHandle = null;
@@ -1036,6 +1083,7 @@
 
             vehiculos = (await getIDBData('id_vehiculos')) || [];
             avisos = (await getIDBData('id_avisos')) || [];
+            await ensureRegistroNumbers();
 
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
             if (isIOS || !('showDirectoryPicker' in window)) {
@@ -1169,6 +1217,8 @@
             document.getElementById('tab-personas').classList.toggle('active', tabName === 'personas');
             document.getElementById('tab-vehiculos').classList.toggle('active', tabName === 'vehiculos');
             document.getElementById('search-bar').value = '';
+            const peopleSort = document.getElementById('people-sort');
+            if (peopleSort) peopleSort.style.display = tabName === 'personas' ? '' : 'none';
             renderCurrentTab();
         }
 
@@ -1183,14 +1233,14 @@
         }
 
         function filterCurrentTab() {
-            const term = document.getElementById('search-bar').value.toLowerCase();
+            const term = document.getElementById('search-bar').value.trim().toLocaleLowerCase('es');
             if (currentActiveTab === 'personas') {
-                const filtered = notes.filter(n => 
-                    (n.nombre && n.nombre.toLowerCase().includes(term)) ||
-                    (n.documento && n.documento.toLowerCase().includes(term)) ||
-                    (n.matricula && n.matricula.toLowerCase().includes(term)) ||
-                    (n.actuaciones && n.actuaciones.some(a => (a.lugar && a.lugar.toLowerCase().includes(term)) || (a.hechos && a.hechos.toLowerCase().includes(term))))
+                const filtered = notes.filter(n =>
+                    [n.nombre, n.documento, n.telefono, n.matricula].some(v => String(v || '').toLocaleLowerCase('es').includes(term)) ||
+                    (n.actuaciones && n.actuaciones.some(a => (a.lugar && a.lugar.toLocaleLowerCase('es').includes(term)) || (a.hechos && a.hechos.toLocaleLowerCase('es').includes(term))))
                 );
+                const sort = document.getElementById('people-sort')?.value || 'az';
+                filtered.sort((a,b) => sort === 'za' ? String(b.nombre||'').localeCompare(String(a.nombre||''),'es') : sort === 'actuaciones' ? ((b.actuaciones||[]).length - (a.actuaciones||[]).length) : String(a.nombre||'').localeCompare(String(b.nombre||''),'es'));
                 renderNotes(filtered);
             } else {
                 const filtered = vehiculos.filter(v => 
@@ -1342,24 +1392,25 @@
 
             list.forEach(n => {
                 const card = document.createElement('div');
-                card.className = 'card';
+                card.className = 'card compact-record';
                 card.onclick = () => viewPersonDetail(n.id);
 
-                const numActuaciones = n.actuaciones ? n.actuaciones.length : 0;
-                const ultActuacion = numActuaciones > 0 ? n.actuaciones[0] : null;
-
+                const actuacionesPersona = Array.isArray(n.actuaciones) ? n.actuaciones : [];
+                const actuacionesUnicasPersona = Array.from(new Map(actuacionesPersona.map((a, i) => [String(a.id || `${a.fecha || ''}|${a.categoria || ''}|${a.lugar || ''}|${a.hechos || i}`), a])).values());
+                const ultimaActuacion = actuacionesUnicasPersona
+                    .filter(a => a.fecha && Number.isFinite(new Date(a.fecha).getTime()))
+                    .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())[0];
+                const ultimaActuacionTxt = ultimaActuacion ? formatFechaHora(ultimaActuacion.fecha) : 'Sin actuaciones';
                 card.innerHTML = `
-                    <button class="btn-delete-card" title="Eliminar persona" data-id="${n.id}">
-                        🗑️
-                    </button>
+                    <button class="btn-delete-card" title="Eliminar persona" data-id="${n.id}">🗑</button>
                     <div class="card-header-row">
-                        <span class="card-title">👤 ${n.nombre}</span>
-                        <span class="badge-cat cat-identificacion">PERSONA</span>
+                        <span class="card-title">${n.nombre || 'Persona sin nombre'}</span>
+                        <div class="person-acts-summary">
+                            <strong>Actuaciones: ${actuacionesUnicasPersona.length} registrada(s)</strong>
+                            <span>Última: ${ultimaActuacionTxt}</span>
+                        </div>
                     </div>
-                    <div class="card-sub" style="color:#fff; font-weight:600; margin-top:2px;">🪪 ${n.documento || 'SIN DOCUMENTO'} | 📞 ${n.telefono || 'N/A'}</div>
-                    <div class="card-sub">🚘 ${n.vehiculo || 'Sin vehículo'} ${n.matricula ? '(' + n.matricula + ')' : ''}</div>
-                    <div class="card-sub" style="color:var(--accent-gold); font-weight:bold; margin-top:4px;">🚨 Antecedentes/Actuaciones: ${numActuaciones} registrada(s)</div>
-                    ${ultActuacion ? `<div class="card-sub" style="font-size:0.75rem; color:#cbd5e1;">Última: ${formatFechaHora(ultActuacion.fecha)} - ${ultActuacion.lugar || 'Lugar N/A'}</div>` : ''}
+                    <div class="compact-meta">${n.documento || 'Sin documento'}${n.telefono ? ' · ' + n.telefono : ''}</div>
                 `;
 
                 const deleteBtn = card.querySelector('.btn-delete-card');
@@ -1474,6 +1525,7 @@
             if (!persona || !Array.isArray(persona.actuaciones)) return;
             const a = persona.actuaciones.find(item => String(item.id) === String(actuacionId));
             if (!a) return;
+            window.__filiameActuacionPDFId = a.id;
             const catLabel = getCatLabel(a.categoria);
             const implicados = Array.isArray(a.implicados) ? a.implicados : [];
             const implicadosHTML = implicados.length ? implicados.map(imp => {
@@ -1485,7 +1537,10 @@
                     <div style="font-size:.78rem;color:var(--accent-gold);margin-top:4px;">🔹 ${imp.implicacion || 'No especificada'}</div>
                 </div>`;
             }).join('') : '<div style="font-size:.82rem;color:var(--text-muted);">No hay personas implicadas registradas.</div>';
+            const avisoOrigen = a.avisoId ? avisos.find(x => String(x.id) === String(a.avisoId)) : null;
             document.getElementById('ver-actuacion-content').innerHTML = `
+                ${a.registro ? `<div class="detail-group"><div class="detail-label">🔢 NÚMERO DE INTERVENCIÓN</div><div class="detail-value" style="color:var(--accent-gold);font-weight:800;">${a.registro}</div></div>` : ''}
+                ${avisoOrigen ? `<div class="detail-group"><div class="detail-label">📞 AVISO DE ORIGEN</div><div class="detail-value" style="color:var(--accent-gold);font-weight:700;cursor:pointer;text-decoration:underline;" onclick="closeVerActuacionModal(); openAvisoModal('${avisoOrigen.id}')">${avisoOrigen.registro || a.avisoRegistro || 'Aviso vinculado'} · Abrir aviso</div><div style="font-size:.82rem;color:var(--text-muted);margin-top:4px;">${avisoOrigen.comunicante || ''} · ${avisoOrigen.motivo || ''}</div></div>` : (a.avisoRegistro ? `<div class="detail-group"><div class="detail-label">📞 AVISO DE ORIGEN</div><div class="detail-value">${a.avisoRegistro}</div></div>` : '<div class="detail-group"><div class="detail-label">📌 PROCEDENCIA</div><div class="detail-value">Actuación directa (sin aviso)</div></div>')}
                 <div class="detail-group"><div class="detail-label">🏷️ CATEGORÍA / MOTIVO</div><div class="detail-value">${catLabel}</div></div>
                 <div class="detail-group"><div class="detail-label">🕒 FECHA Y HORA</div><div class="detail-value">${formatFechaHora(a.fecha)}</div></div>
                 <div class="detail-group"><div class="detail-label">📍 LUGAR</div><div class="detail-value">${a.lugar || 'No especificado'}</div></div>
@@ -1495,6 +1550,145 @@
                 <button class="btn-primary" onclick="closeVerActuacionModal(); openActuacionModal('${persona.id}', '${a.id}')">✏️ Editar Actuación</button>
             `;
             document.getElementById('modal-ver-actuacion').classList.add('active');
+        }
+
+        async function exportActuacionPDF() {
+            const { jsPDF } = window.jspdf || {};
+            if (!jsPDF) {
+                alert('No se ha podido cargar el generador de PDF. Comprueba tu conexión e inténtalo de nuevo.');
+                return;
+            }
+
+            const content = document.getElementById('ver-actuacion-content');
+            const editButton = content ? content.querySelector('button.btn-primary') : null;
+            const match = editButton ? editButton.getAttribute('onclick').match(/openActuacionModal\('([^']*)',\s*'([^']*)'\)/) : null;
+            let a = null;
+            if (match) a = buscarActuacionUnica(match[2]);
+            if (!a && window.__filiameActuacionPDFId) a = buscarActuacionUnica(window.__filiameActuacionPDFId);
+            if (!a && content) {
+                const text = content.innerText || '';
+                const reg = text.match(/INT-\d+\/\d{4}/);
+                if (reg) a = obtenerActuacionesUnicas().find(x => x.registro === reg[0]);
+            }
+            if (!a) {
+                alert('No se ha podido localizar la actuación que está abierta. Cierra la ficha y vuelve a abrirla.');
+                return;
+            }
+
+            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const margin = 15;
+            const textWidth = pageWidth - margin * 2;
+            let y = 18;
+
+            const ensureSpace = (height = 8) => {
+                if (y + height > pageHeight - 16) {
+                    doc.addPage();
+                    y = 18;
+                }
+            };
+            const section = (label, value) => {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                const labelLines = doc.splitTextToSize(label, textWidth);
+                ensureSpace(labelLines.length * 5 + 7);
+                doc.text(labelLines, margin, y);
+                y += labelLines.length * 5;
+                doc.setFont('helvetica', 'normal');
+                const valueLines = doc.splitTextToSize(String(value === undefined || value === null || value === '' ? 'No especificado' : value), textWidth);
+                ensureSpace(valueLines.length * 5 + 5);
+                doc.text(valueLines, margin, y);
+                y += valueLines.length * 5 + 4;
+            };
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(17);
+            doc.setTextColor(25, 42, 72);
+            doc.text('FICHA DE ACTUACIÓN', margin, y);
+            y += 7;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.setTextColor(100, 100, 100);
+            doc.text('Informe generado desde FILIAME · ' + new Date().toLocaleString('es-ES'), margin, y);
+            y += 4;
+            doc.setDrawColor(190, 190, 190);
+            doc.line(margin, y, pageWidth - margin, y);
+            y += 8;
+            doc.setTextColor(0, 0, 0);
+
+            section('Número de intervención', a.registro || 'Sin numerar');
+            section('Categoría / motivo', getCatLabel(a.categoria));
+            section('Fecha y hora', formatFechaHora(a.fecha));
+            section('Lugar', a.lugar || 'No especificado');
+            section('Hechos / detalles', a.hechos || 'Sin detalles registrados.');
+
+            const aviso = a.avisoId ? avisos.find(x => String(x.id) === String(a.avisoId)) : null;
+            if (aviso) {
+                section('Aviso de origen', aviso.registro || a.avisoRegistro || 'Aviso vinculado');
+                section('Comunicante', aviso.comunicante || 'No especificado');
+                section('Motivo del aviso', aviso.motivo || 'No especificado');
+                section('Fecha y hora del aviso', aviso.fecha ? formatFechaHora(aviso.fecha) : 'No especificada');
+                section('Lugar del aviso', aviso.lugar || 'No especificado');
+                section('Observaciones del aviso', aviso.observaciones || 'Sin observaciones');
+            } else if (a.avisoRegistro) {
+                section('Aviso de origen', a.avisoRegistro);
+            } else {
+                section('Procedencia', 'Actuación directa (sin aviso vinculado)');
+            }
+
+            ensureSpace(12);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.setTextColor(25, 42, 72);
+            doc.text('PERSONAS IMPLICADAS', margin, y);
+            y += 7;
+            doc.setTextColor(0, 0, 0);
+            const implicados = Array.isArray(a.implicados) ? a.implicados : [];
+            if (!implicados.length) {
+                section('Personas', 'No hay personas implicadas registradas.');
+            } else {
+                implicados.forEach((imp, index) => {
+                    const persona = notes.find(n => String(n.id) === String(imp.personaId));
+                    ensureSpace(22);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(10);
+                    const nombre = persona ? (persona.nombre || 'Sin nombre') : 'Persona no disponible en el registro';
+                    const titulo = `${index + 1}. ${nombre}`;
+                    const tituloLines = doc.splitTextToSize(titulo, textWidth);
+                    doc.text(tituloLines, margin, y);
+                    y += tituloLines.length * 5;
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(9);
+                    const datos = [
+                        `Implicación: ${imp.implicacion || 'No especificada'}`,
+                        `Documento: ${persona ? (persona.documento || 'No registrado') : 'No disponible'}`,
+                        `Teléfono: ${persona ? (persona.telefono || 'No registrado') : 'No disponible'}`,
+                        `Domicilio: ${persona ? (persona.domicilio || 'No registrado') : 'No disponible'}`
+                    ];
+                    datos.forEach(linea => {
+                        const lines = doc.splitTextToSize(linea, textWidth - 3);
+                        ensureSpace(lines.length * 4.5 + 2);
+                        doc.text(lines, margin + 3, y);
+                        y += lines.length * 4.5;
+                    });
+                    y += 3;
+                });
+            }
+
+            const fileName = `Ficha_Actuacion_${String(a.registro || a.id || 'FILIAME').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
+            const blob = doc.output('blob');
+            const file = new File([blob], fileName, { type: 'application/pdf' });
+            if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+                try {
+                    await navigator.share({ files: [file], title: 'Ficha de actuación FILIAME' });
+                    return;
+                } catch (err) {
+                    if (err && err.name === 'AbortError') return;
+                }
+            }
+            doc.save(fileName);
+            alert('PDF generado. Ya puedes compartirlo desde los archivos descargados.');
         }
 
         function closeVerActuacionModal() {
@@ -1511,6 +1705,7 @@
                 return `
                     <div class="actuacion-card" onclick="openActuacionView('${persona.id}', '${a.id}')">
                         <div class="actuacion-header">
+                            <span style="font-size:.78rem;font-weight:800;color:var(--accent-gold);">${a.registro || ''}</span>
                             <span class="badge-cat ${catClass}">${catLabel}</span>
                             <span style="font-size:0.75rem; color:var(--text-muted);">🕒 ${formatFechaHora(a.fecha)}</span>
                         </div>
@@ -1747,16 +1942,18 @@
             return [{ personaId: String(personaId), implicacion: 'Identificado' }];
         }
 
-        function openActuacionModal(personId, actuacionId = null) {
-            currentNoteId = personId;
-            const n = notes.find(item => String(item.id) === String(personId));
+        function openActuacionModal(personId = null, actuacionId = null, avisoId = null) {
+            currentNoteId = personId || null;
+            currentActuacionAvisoId = avisoId || null;
+            const n = personId ? notes.find(item => String(item.id) === String(personId)) : null;
             currentActuacionImplicados = [];
 
             if (actuacionId && n && n.actuaciones) {
                 const a = n.actuaciones.find(item => String(item.id) === String(actuacionId));
                 if (a) {
-                    document.getElementById('actuacion-modal-title').innerText = "✏️ Editar Actuación";
+                    document.getElementById('actuacion-modal-title').innerText = `✏️ Editar Actuación ${a.registro || ''}`;
                     document.getElementById('actuacion_id').value = a.id;
+                    currentActuacionAvisoId = a.avisoId || null;
                     document.getElementById('actuacion_categoria').value = a.categoria || 'identificacion';
                     document.getElementById('actuacion_fecha').value = a.fecha || '';
                     document.getElementById('actuacion_lugar').value = a.lugar || '';
@@ -1766,13 +1963,19 @@
             } else {
                 document.getElementById('actuacion-modal-title').innerText = "🚨 Registrar Actuación";
                 document.getElementById('actuacion_id').value = '';
-                document.getElementById('actuacion_categoria').value = 'identificacion';
+                document.getElementById('actuacion_categoria').value = 'agresion_discusion';
                 const now = new Date();
                 now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
                 document.getElementById('actuacion_fecha').value = now.toISOString().slice(0, 16);
-                document.getElementById('actuacion_lugar').value = '';
-                document.getElementById('actuacion_hechos').value = '';
-                currentActuacionImplicados = [{ personaId:String(personId), implicacion:'Identificado' }];
+                const avisoParaNuevaActuacion = avisoId ? avisos.find(x => String(x.id) === String(avisoId)) : null;
+                document.getElementById('actuacion_lugar').value = avisoParaNuevaActuacion ? (avisoParaNuevaActuacion.lugar || '') : '';
+                document.getElementById('actuacion_hechos').value = avisoParaNuevaActuacion ? [
+                    avisoParaNuevaActuacion.motivo && avisoParaNuevaActuacion.motivo !== 'Sin especificar' ? `Motivo del aviso: ${avisoParaNuevaActuacion.motivo}` : '',
+                    avisoParaNuevaActuacion.comunicante && avisoParaNuevaActuacion.comunicante !== 'No especificado' ? `Comunicante: ${avisoParaNuevaActuacion.comunicante}` : '',
+                    avisoParaNuevaActuacion.observaciones || ''
+                ].filter(Boolean).join('\n') : '';
+                if (avisoParaNuevaActuacion && avisoParaNuevaActuacion.fecha) document.getElementById('actuacion_fecha').value = avisoParaNuevaActuacion.fecha;
+                currentActuacionImplicados = personId ? [{ personaId:String(personId), implicacion:'Identificado' }] : [];
             }
 
             document.getElementById('actuacion_persona_busqueda').value = '';
@@ -1784,18 +1987,21 @@
         function closeActuacionModal() {
             document.getElementById('modal-actuacion').classList.remove('active');
             currentActuacionImplicados = [];
+            currentActuacionAvisoId = null;
         }
 
         async function saveActuacionModal() {
-            if (!currentNoteId) return;
-            const n = notes.find(item => String(item.id) === String(currentNoteId));
-            if (!n) return;
+            const n = currentNoteId ? notes.find(item => String(item.id) === String(currentNoteId)) : null;
+            if (!n && !currentActuacionAvisoId) return;
             if (!currentActuacionImplicados.length) {
                 alert('Añade al menos una persona implicada en la actuación.');
                 return;
             }
 
-            const actId = document.getElementById('actuacion_id').value || Date.now().toString();
+            const actId = document.getElementById('actuacion_id').value || (Date.now().toString() + '_' + Math.random().toString(36).slice(2, 6));
+            const accionAnterior = actId ? buscarActuacionUnica(actId) : null;
+            const registro = accionAnterior && accionAnterior.registro ? accionAnterior.registro : siguienteRegistro('INT', new Date().getFullYear());
+            const avisoActual = currentActuacionAvisoId ? avisos.find(a => String(a.id) === String(currentActuacionAvisoId)) : null;
 
             // Las personas nuevas se incorporan al registro general al guardar la actuación.
             currentActuacionImplicados.forEach(imp => {
@@ -1811,6 +2017,9 @@
                 fecha: document.getElementById('actuacion_fecha').value,
                 lugar: document.getElementById('actuacion_lugar').value.trim(),
                 hechos: document.getElementById('actuacion_hechos').value.trim(),
+                registro,
+                avisoId: avisoActual ? avisoActual.id : (accionAnterior ? accionAnterior.avisoId || null : null),
+                avisoRegistro: avisoActual ? avisoActual.registro : (accionAnterior ? accionAnterior.avisoRegistro || null : null),
                 implicados
             };
 
@@ -1831,8 +2040,11 @@
             await saveIDBData('id_notes', notes);
             await saveToLocalFolder();
 
+            const personaRetorno = currentNoteId;
+            const avisoRetorno = currentActuacionAvisoId;
             closeActuacionModal();
-            openPersonActuacionesScreen(currentNoteId);
+            if (personaRetorno) openPersonActuacionesScreen(personaRetorno);
+            else if (avisoRetorno) { showScreen('screen-avisos'); renderAvisos(); }
         }
 
         async function deleteActuacion(personId, actuacionId) {
@@ -1852,22 +2064,91 @@
             switch(cat) {
                 case 'identificacion': return 'cat-identificacion';
                 case 'trafico': return 'cat-trafico';
-                case 'incidencia': return 'cat-incidencia';
-                case 'alarma': return 'cat-alarma';
                 case 'seguridad': return 'cat-seguridad';
+                case 'agresion_discusion': case 'robos_hurtos': case 'violencia_genero':
+                case 'alcoholemia': case 'okupas': case 'ordenanzas': case 'desobediencia_atentado':
+                    return 'cat-incidencia';
                 default: return 'cat-otro';
             }
         }
 
         function getCatLabel(cat) {
-            switch(cat) {
-                case 'identificacion': return 'Identificación';
-                case 'trafico': return 'Tráfico';
-                case 'incidencia': return 'Incidencia';
-                case 'alarma': return 'Alarma/Alerta';
-                case 'seguridad': return 'Seguridad Ciudadana';
-                default: return 'Otro';
+            const labels = {
+                agresion_discusion: 'Agresión/Discusión',
+                robos_hurtos: 'Robos / Hurtos',
+                violencia_genero: 'Violencia de genero',
+                alcoholemia: 'Alcoholemia',
+                seguridad: 'Seguridad Ciudadana',
+                trafico: 'Tráfico',
+                okupas: 'Okupas',
+                identificacion: 'Identificación',
+                ordenanzas: 'Ordenanzas',
+                desobediencia_atentado: 'Desobediencia/Atentado',
+                otro: 'Otros',
+                incidencia: 'Otros',
+                alarma: 'Otros'
+            };
+            return labels[cat] || 'Otros';
+        }
+
+        function buscarActuacionUnica(actuacionId) {
+            for (const persona of notes) {
+                const a = (persona.actuaciones || []).find(x => String(x.id) === String(actuacionId));
+                if (a) return a;
             }
+            return null;
+        }
+
+        function obtenerActuacionesUnicas() {
+            const unicas = new Map();
+            notes.forEach(persona => (persona.actuaciones || []).forEach(a => {
+                const key = String(a.id || `${a.fecha}|${a.categoria}|${a.lugar}|${a.hechos}`);
+                if (!unicas.has(key) || (!unicas.get(key).registro && a.registro)) unicas.set(key, a);
+            }));
+            return Array.from(unicas.values());
+        }
+
+        function siguienteRegistro(prefijo, anio) {
+            const patron = new RegExp('^' + prefijo + '-(\\d+)/(\\d{4})$');
+            const registros = prefijo === 'A' ? avisos.map(a => a.registro) : obtenerActuacionesUnicas().map(a => a.registro);
+            let maximo = 0;
+            registros.forEach(reg => {
+                const m = String(reg || '').match(patron);
+                if (m && Number(m[2]) === Number(anio)) maximo = Math.max(maximo, Number(m[1]));
+            });
+            return `${prefijo}-${maximo + 1}/${anio}`;
+        }
+
+        async function ensureRegistroNumbers() {
+            let avisosCambiados = false;
+            let notasCambiadas = false;
+            // Asignar números a avisos antiguos que todavía no tenían registro.
+            const avisosPorAnio = [...avisos].filter(a => !a.registro).sort((a,b) => String(a.fecha || '').localeCompare(String(b.fecha || '')));
+            avisosPorAnio.forEach(a => {
+                const year = new Date().getFullYear();
+                a.registro = siguienteRegistro('A', year);
+                avisosCambiados = true;
+            });
+            // Numerar cada actuación una sola vez aunque aparezca en varias fichas.
+            const unicas = obtenerActuacionesUnicas();
+            const porAnio = unicas.filter(a => !a.registro).sort((a,b) => String(a.fecha || '').localeCompare(String(b.fecha || '')));
+            porAnio.forEach(a => {
+                a.registro = siguienteRegistro('INT', new Date().getFullYear());
+                notasCambiadas = true;
+            });
+            // Mantener el mismo número INT en todas las copias de una actuación compartida.
+            unicas.forEach(a => {
+                if (!a.registro) return;
+                notes.forEach(persona => (persona.actuaciones || []).forEach(copia => {
+                    if (String(copia.id) === String(a.id) && copia.registro !== a.registro) {
+                        copia.registro = a.registro;
+                        notasCambiadas = true;
+                    }
+                }));
+            });
+            if (avisosCambiados) await saveIDBData('id_avisos', avisos);
+            if (notasCambiadas) await saveIDBData('id_notes', notes);
+            if (avisosCambiados || notasCambiadas) await saveToLocalFolder();
         }
 
         function formatFechaHora(isoStr) {
@@ -2081,7 +2362,7 @@
             if (avisoId) {
                 const a = avisos.find(item => String(item.id) === String(avisoId));
                 if (a) {
-                    document.getElementById('aviso-modal-title').innerText = "✏️ Editar Llamada / Aviso";
+                    document.getElementById('aviso-modal-title').innerText = `✏️ Editar Aviso ${a.registro || ''}`;
                     document.getElementById('aviso_id').value = a.id;
                     document.getElementById('aviso_fecha').value = a.fecha || '';
                     document.getElementById('aviso_telefono').value = a.telefono || '';
@@ -2126,6 +2407,7 @@
 
             const avisoData = {
                 id: id || Date.now().toString(),
+                registro: avisoExistente ? (avisoExistente.registro || siguienteRegistro('A', new Date().getFullYear())) : siguienteRegistro('A', new Date().getFullYear()),
                 fecha: document.getElementById('aviso_fecha').value,
                 telefono: tel || 'No facilitado',
                 comunicante: comunicante || 'No especificado',
@@ -2163,42 +2445,53 @@
         function renderAvisos() {
             const container = document.getElementById('avisos-list');
             container.innerHTML = "";
+            const term = (document.getElementById('avisos-search')?.value || '').trim().toLocaleLowerCase('es');
+            const sort = document.getElementById('avisos-sort')?.value || 'recientes';
+            let lista = (avisos || []).filter(a => [a.registro, a.telefono, a.comunicante, a.motivo, a.lugar, a.fecha, a.observaciones].some(v => String(v || '').toLocaleLowerCase('es').includes(term)));
+            const fechaValor = a => { const d = a.fecha ? new Date(a.fecha).getTime() : 0; return Number.isFinite(d) ? d : 0; };
+            if (sort === 'antiguos') lista.sort((a,b) => fechaValor(a)-fechaValor(b));
+            else if (sort === 'numero') lista.sort((a,b) => String(a.registro||'').localeCompare(String(b.registro||''),'es',{numeric:true}));
+            else lista.sort((a,b) => fechaValor(b)-fechaValor(a));
 
-            if (!avisos || avisos.length === 0) {
-                container.innerHTML = `<div style="text-align:center; color: var(--text-muted); padding:30px;">No hay avisos ni llamadas registradas.</div>`;
+            if (!lista.length) {
+                container.innerHTML = `<div style="text-align:center; color: var(--text-muted); padding:20px;">${avisos.length ? 'No hay avisos que coincidan con la búsqueda.' : 'No hay avisos ni llamadas registradas.'}</div>`;
                 return;
             }
 
-            avisos.forEach(a => {
+            lista.forEach(a => {
                 const card = document.createElement('div');
-                card.className = 'card';
-                card.onclick = () => openAvisoModal(a.id);
-
+                card.className = 'card aviso-compact';
                 const fechaTxt = a.fecha ? formatFechaHora(a.fecha) : 'Fecha sin especificar';
                 const estadoActual = a.estado || 'en_curso';
-
+                const acts = obtenerActuacionesUnicas().filter(x => String(x.avisoId) === String(a.id));
+                const extraId = 'aviso-extra-' + String(a.id).replace(/[^a-zA-Z0-9_-]/g, '_');
                 card.innerHTML = `
-                    <button class="btn-delete-card" title="Eliminar aviso" onclick="event.stopPropagation(); deleteAviso('${a.id}')">
-                        🗑
-                    </button>
-                    <div class="aviso-top-bar" onclick="event.stopPropagation();">
-                        <div class="aviso-status-toggle">
-                            <button class="btn-status ${estadoActual === 'en_curso' ? 'active-en-curso' : ''}" onclick="setAvisoEstado('${a.id}', 'en_curso')">
-                                En curso
-                            </button>
-                            <button class="btn-status ${estadoActual === 'resuelto' ? 'active-resuelto' : ''}" onclick="setAvisoEstado('${a.id}', 'resuelto')">
-                                Resuelto
-                            </button>
+                    <button class="btn-delete-card" title="Eliminar aviso" onclick="event.stopPropagation(); deleteAviso('${a.id}')">🗑</button>
+                    <div class="aviso-summary" onclick="openAvisoModal('${a.id}')">
+                        <div class="aviso-summary-main">
+                            <div class="aviso-summary-title">${a.registro || 'Aviso'} · ${fechaTxt}</div>
+                            <div class="aviso-summary-meta">${a.motivo || 'Sin motivo'}${a.lugar ? ' · ' + a.lugar : ''}</div>
+                        </div>
+                        <div class="aviso-summary-side">
+                            <span style="font-size:.68rem;color:var(--text-muted);">${acts.length} int.</span>
                         </div>
                     </div>
-                    <div class="card-header-row">
-                        <span class="card-title">📞 ${a.telefono}</span>
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:6px;">
+                        <div class="aviso-status-toggle" onclick="event.stopPropagation();" style="margin:0;">
+                            <button class="btn-status ${estadoActual === 'en_curso' ? 'active-en-curso' : ''}" onclick="setAvisoEstado('${a.id}', 'en_curso')">En curso</button>
+                            <button class="btn-status ${estadoActual === 'resuelto' ? 'active-resuelto' : ''}" onclick="setAvisoEstado('${a.id}', 'resuelto')">Resuelto</button>
+                        </div>
+                        <button type="button" class="btn-inline aviso-detail-toggle" onclick="event.stopPropagation(); document.getElementById('${extraId}').classList.toggle('open'); this.textContent = this.textContent.includes('detalles') ? 'Ocultar' : 'Ver detalles';">Ver detalles</button>
+                        <button type="button" class="btn-inline aviso-detail-toggle" onclick="event.stopPropagation(); openActuacionModal(null, null, '${a.id}')">＋ Intervención</button>
                     </div>
-                    <div class="card-sub" style="color: #fff; font-weight:600; font-size:0.88rem; margin-top:3px;">👤 Comunicante: ${a.comunicante || 'No especificado'}</div>
-                    <div class="card-sub" style="color: var(--accent-gold); font-weight:600; font-size:0.88rem; margin-top:3px;">🎯 Motivo: ${a.motivo}</div>
-                    <div class="card-sub" style="color: #cbd5e1; font-size:0.85rem; margin-top:3px;">📍 Lugar: ${a.lugar || 'No especificado'}</div>
-                    <div class="card-sub" style="margin-top:6px; color:#cbd5e1;">📝 <strong>Obs:</strong> ${a.observaciones || 'Sin observaciones'}</div>
-                    <div class="card-sub" style="font-size: 0.75rem; margin-top: 8px; color: var(--text-muted);">🕒 ${fechaTxt}</div>
+                    <div id="${extraId}" class="aviso-extra">
+                        <div class="card-sub">📞 Teléfono: ${a.telefono || 'No facilitado'}</div>
+                        <div class="card-sub">👤 Comunicante: ${a.comunicante || 'No especificado'}</div>
+                        <div class="card-sub">📍 Lugar: ${a.lugar || 'No especificado'}</div>
+                        <div class="card-sub">📝 ${a.observaciones || 'Sin observaciones'}</div>
+                        <div style="font-size:.78rem;color:var(--accent-gold);font-weight:800;margin-top:8px;">Intervenciones vinculadas</div>
+                        ${acts.length ? acts.map(x => `<div style="font-size:.78rem;color:#e2e8f0;margin:5px 0;cursor:pointer;text-decoration:underline;" onclick="event.stopPropagation(); openActuacionView('${(x.implicados || []).length ? x.implicados[0].personaId : ''}', '${x.id}')">${x.registro || 'INT pendiente'} · ${getCatLabel(x.categoria)} · ${formatFechaHora(x.fecha)}</div>`).join('') : '<div class="card-sub">Sin intervenciones vinculadas</div>'}
+                    </div>
                 `;
                 container.appendChild(card);
             });
