@@ -290,6 +290,21 @@
         .cat-otro { background: rgba(149, 165, 166, 0.25); color: #95a5a6; border: 1px solid #95a5a6; }
 
         .card-sub { font-size: 0.82rem; color: var(--text-muted); margin-top: 3px; }
+        .vehicle-compact-card { padding: 7px 42px 7px 10px; margin-bottom: 6px; border-radius: 9px; }
+        .vehicle-compact-card .card-header-row { margin-bottom: 1px; padding-right: 0; }
+        .vehicle-compact-card .card-title { font-size: .88rem; line-height: 1.2; }
+        .vehicle-compact-card .card-sub { font-size: .74rem; margin-top: 2px; line-height: 1.2; }
+        .vehicle-compact-card .btn-delete-card { width: 27px; height: 27px; top: 6px; right: 6px; border-radius: 6px; }
+        .person-vehicle-box { padding: 9px; border: 1px solid var(--border-subtle); border-radius: 10px; background: rgba(0,0,0,.12); margin: 6px 0 12px; }
+        .person-vehicle-item { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size: .82rem; padding: 6px 0; border-bottom: 1px solid var(--border-subtle); line-height: 1.35; }
+        .person-vehicle-item:last-child { border-bottom: 0; }
+        .person-vehicle-item-text { min-width:0; overflow-wrap:anywhere; flex:1; }
+        .btn-unlink-person-vehicle { flex:0 0 auto; width:23px; height:23px; padding:0; border:1px solid var(--border-subtle); border-radius:50%; background:transparent; color:var(--text-muted); font-size:15px; line-height:1; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
+        .btn-unlink-person-vehicle:hover { color:#fff; background:var(--danger-red); border-color:var(--danger-red); }
+        .person-vehicle-mini-form { margin-top: 8px; padding: 9px; border-radius: 8px; background: rgba(0,0,0,.16); border: 1px solid var(--border-subtle); }
+        .person-vehicle-mini-form input { margin-bottom: 7px; }
+        .person-vehicle-actions { display:flex; gap:7px; flex-wrap:wrap; margin-top:7px; }
+        .person-vehicle-actions button { padding:7px 10px; font-size:.78rem; }
 
         /* ESTILOS AVISOS */
         .aviso-top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-right: 32px; }
@@ -322,13 +337,6 @@
         .gallery-btn { background: none; border: none; color: #fff; font-size: 0.75rem; cursor: pointer; padding: 2px 4px; }
 
         /* DETALLE */
-        .person-identity-header { display:flex; align-items:center; gap:14px; padding:12px; margin-bottom:10px; border:1px solid var(--border-subtle); border-radius:var(--radius-medium); background:var(--card-glass); }
-        .person-face-wrap { width:86px; flex:0 0 86px; text-align:center; }
-        .person-face { width:82px; height:96px; border-radius:10px; border:1px solid var(--card-border-glow); object-fit:cover; background:rgba(12,18,32,.85); display:flex; align-items:center; justify-content:center; }
-        .person-face-placeholder { width:82px; height:96px; border-radius:10px; border:1px dashed var(--card-border-glow); background:rgba(12,18,32,.85); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; color:var(--text-muted); font-size:1.6rem; }
-        .person-face-actions { margin-top:5px; }
-        .person-face-btn { background:transparent; border:1px solid var(--border-subtle); color:var(--accent-gold); border-radius:7px; padding:4px 6px; font-size:.66rem; cursor:pointer; }
-        .person-identity-name { min-width:0; flex:1; color:var(--accent-gold); font-size:1.12rem; font-weight:800; overflow-wrap:anywhere; }
         .btn-share-compact { display:flex; width:fit-content; align-items:center; gap:5px; background:rgba(224,169,109,.08); color:var(--text-muted); border:1px solid var(--border-subtle); border-radius:7px; padding:5px 8px; margin:0 0 10px auto; font-size:.72rem; cursor:pointer; }
         .btn-share-compact:hover { color:var(--accent-gold); border-color:var(--card-border-glow); }
         .detail-group { background: var(--card-glass); padding: 12px 14px; border-radius: var(--radius-medium); margin-bottom: 8px; border: 1px solid var(--border-subtle); }
@@ -625,16 +633,30 @@
                         <div class="label">🏠 Domicilio</div>
                         <input type="text" id="domicilio" placeholder="Dirección completa">
 
-                        <div class="row">
-                            <div class="col">
-                                <div class="label">🚘 Vehículo Habitual</div>
-                                <input type="text" id="vehiculo" placeholder="Marca/Modelo">
-                            </div>
-                            <div class="col">
-                                <div class="label">🔢 Matrícula</div>
-                                <input type="text" id="matricula" placeholder="Matrícula" oninput="checkReincidencia()">
+                        <div class="label">📝 Observaciones de la persona</div>
+                        <textarea id="persona_observaciones" rows="3" placeholder="Anotaciones relativas a esta persona..."></textarea>
+
+                        <div class="label">🚘 Vehículo / Matrícula</div>
+                        <div class="person-vehicle-box">
+                            <div id="person-form-vehicles" class="person-vehicle-item" style="color:var(--text-muted);">Todavía no hay vehículos registrados para esta persona.</div>
+                            <button type="button" class="btn-inline" onclick="togglePersonMiniVehicleForm()" style="margin-top:7px;">＋ Crear ficha de vehículo</button>
+                            <div id="person-mini-vehicle-form" class="person-vehicle-mini-form" style="display:none;">
+                                <div class="label">🔢 Matrícula *</div>
+                                <input type="text" id="person_vehicle_matricula" placeholder="1234ABC" style="text-transform:uppercase;" autocomplete="off">
+                                <div class="row" style="gap:7px;">
+                                    <div class="col"><div class="label">Marca</div><input type="text" id="person_vehicle_marca" placeholder="Marca"></div>
+                                    <div class="col"><div class="label">Modelo</div><input type="text" id="person_vehicle_modelo" placeholder="Modelo"></div>
+                                </div>
+                                <div class="person-vehicle-actions">
+                                    <button type="button" class="btn-primary" onclick="createVehicleFromPersonForm()">Guardar vehículo</button>
+                                    <button type="button" class="btn-inline" onclick="togglePersonMiniVehicleForm(false)">Cancelar</button>
+                                </div>
+                                <div style="font-size:.72rem;color:var(--text-muted);margin-top:5px;">Se creará en el registro general y quedará vinculado a esta persona. Podrás completar el resto de datos desde la ficha del vehículo.</div>
                             </div>
                         </div>
+                        <!-- Se conservan los datos manuales antiguos para no perder información ya guardada. -->
+                        <input type="hidden" id="vehiculo">
+                        <input type="hidden" id="matricula">
 
                         <div class="label">📷 Fotografías (Escaneo OCR)</div>
                         <div>
@@ -694,6 +716,12 @@
                         <div class="label">🛠️ Número de Bastidor (VIN)</div>
                         <input type="text" id="v_vin" placeholder="17 caracteres del bastidor" style="text-transform:uppercase;">
 
+                        <div class="label">👤 Asociar con persona registrada</div>
+                        <input type="text" id="v_persona_busqueda" placeholder="Buscar por nombre, DNI/NIE o teléfono" autocomplete="off" oninput="buscarTitularPersona()" style="width:100%;margin-bottom:4px;">
+                        <input type="hidden" id="v_persona_id" value="">
+                        <div id="v_persona_resultados" class="vinculo-search-results"></div>
+                        <button type="button" class="btn-inline" onclick="limpiarTitularPersona()" style="margin:6px 0 8px;">✕ Quitar asociación</button>
+                        <button type="button" class="btn-inline" onclick="createPersonForVehicle()" style="margin-bottom:12px;">➕ Registrar nueva persona</button>
                         <div class="label">👤 Titular / Conductor</div>
                         <input type="text" id="v_titular" placeholder="Nombre completo del Titular o Conductor">
 
@@ -990,7 +1018,6 @@
         </div>
     </div>
 
-    <input id="person-face-file" type="file" accept="image/*" style="display:none" onchange="handlePersonFacePhoto(event)">
 
     <script>
         const PIN_CORRECTO = "130037";
@@ -1002,9 +1029,12 @@
         let currentPhotosVehicle = [];
         
         let currentNoteId = null;
+        let personFormStableId = null;
         let currentVehiculoId = null;
         let currentActiveTab = 'personas'; // 'personas' | 'vehiculos'
         let currentDetailType = 'person'; // 'person' | 'vehicle'
+        let returnToVehicleAfterPersonSave = false;
+        let returnToVehicleListAfterPersonVehicleSave = false;
         let currentActuacionImplicados = [];
         let currentActuacionAvisoId = null;
         let currentActuacionNuevaPersonaPhotos = [];
@@ -1285,13 +1315,25 @@
         }
 
         /* GESTIÓN DE FICHA DE PERSONA */
+        function createUniquePersonId() {
+            let id;
+            do {
+                id = 'persona_' + Date.now().toString() + '_' + Math.random().toString(36).slice(2, 10);
+            } while (notes.some(n => String(n.id) === id) || vehiculos.some(v => String(v.titular_persona_id || '') === id));
+            return id;
+        }
+
         function openNewNote() {
             currentNoteId = null;
+            // ID temporal único: evita que una ficha nueva herede vehículos por una colisión de IDs antiguos.
+            personFormStableId = createUniquePersonId();
             currentPhotosPerson = [];
             document.getElementById('note-form').reset();
             document.getElementById('note-id').value = '';
             document.getElementById('form-title').innerText = "Nueva Ficha de Persona";
             document.getElementById('reincidencia-alert').style.display = 'none';
+            togglePersonMiniVehicleForm(false);
+            renderPersonFormVehicles();
 
             renderGallery('person');
             showScreen('screen-form');
@@ -1303,6 +1345,7 @@
                 if (!n) return;
 
                 document.getElementById('form-title').innerText = "Editar Persona";
+                personFormStableId = String(n.id);
                 document.getElementById('note-id').value = n.id;
                 document.getElementById('nombre').value = n.nombre || '';
                 document.getElementById('documento').value = n.documento || '';
@@ -1311,8 +1354,11 @@
                 document.getElementById('telefono').value = n.telefono || '';
                 document.getElementById('padres').value = n.padres || '';
                 document.getElementById('domicilio').value = n.domicilio || '';
+                document.getElementById('persona_observaciones').value = n.observaciones || '';
                 document.getElementById('vehiculo').value = n.vehiculo || '';
                 document.getElementById('matricula').value = n.matricula || '';
+                togglePersonMiniVehicleForm(false);
+                renderPersonFormVehicles();
 
                 currentPhotosPerson = [...(n.fotos || [])];
                 renderGallery('person');
@@ -1328,6 +1374,7 @@
                 document.getElementById('v_marca').value = v.marca || '';
                 document.getElementById('v_modelo').value = v.modelo || '';
                 document.getElementById('v_vin').value = v.vin || '';
+                renderTitularPersonaOptions(v.titular_persona_id || '');
                 document.getElementById('v_titular').value = v.titular || '';
                 document.getElementById('v_documento_titular').value = v.documento_titular || '';
                 document.getElementById('v_anotaciones').value = v.anotaciones || '';
@@ -1336,6 +1383,98 @@
                 renderGallery('vehicle');
                 showScreen('screen-form-vehiculo');
             }
+        }
+
+        function togglePersonMiniVehicleForm(forceOpen) {
+            const panel = document.getElementById('person-mini-vehicle-form');
+            if (!panel) return;
+            const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : panel.style.display === 'none';
+            panel.style.display = shouldOpen ? 'block' : 'none';
+            if (shouldOpen) document.getElementById('person_vehicle_matricula').focus();
+            else {
+                document.getElementById('person_vehicle_matricula').value = '';
+                document.getElementById('person_vehicle_marca').value = '';
+                document.getElementById('person_vehicle_modelo').value = '';
+            }
+        }
+
+        function renderPersonFormVehicles() {
+            const container = document.getElementById('person-form-vehicles');
+            if (!container) return;
+            const personId = currentNoteId || personFormStableId;
+            // Solo mostrar vehículos del registro general vinculados explícitamente por ID.
+            // No usar nombres, matrículas ni los campos manuales antiguos como criterio de asociación.
+            const linked = vehiculos.filter(v => personId && v && v.id != null && String(v.titular_persona_id || '') === String(personId));
+            const legacy = String(document.getElementById('vehiculo')?.value || '').trim();
+            const legacyMat = String(document.getElementById('matricula')?.value || '').trim();
+            const entries = linked.map(v => `<div class="person-vehicle-item"><span class="person-vehicle-item-text">🚘 <strong>${[v.marca, v.modelo].filter(Boolean).join(' ') || 'Vehículo'}</strong> · 🔢 ${v.matricula || 'Sin matrícula'}</span><button type="button" class="btn-unlink-person-vehicle" title="Quitar vinculación con esta persona" aria-label="Quitar vinculación del vehículo ${v.matricula || ''}" onclick="desvincularVehiculoDePersona('${String(v.id).replace(/'/g, "\\'")}')">×</button></div>`);
+            if ((legacy || legacyMat) && !linked.some(v => String(v.matricula || '').trim().toUpperCase() === legacyMat.toUpperCase() && [v.marca, v.modelo].filter(Boolean).join(' ').trim().toUpperCase() === legacy.toUpperCase())) {
+                entries.push(`<div class="person-vehicle-item"><span class="person-vehicle-item-text" style="color:var(--text-muted);">📝 Dato antiguo: ${legacy || 'Vehículo sin descripción'}${legacyMat ? ' / ' + legacyMat : ''}</span><button type="button" class="btn-unlink-person-vehicle" title="Borrar dato antiguo de vehículo de esta ficha" aria-label="Borrar dato antiguo de vehículo" onclick="borrarDatoAntiguoVehiculoPersona()">×</button></div>`);
+            }
+            container.innerHTML = entries.length ? entries.join('') : 'Todavía no hay vehículos registrados para esta persona.';
+        }
+
+        async function desvincularVehiculoDePersona(vehiculoId) {
+            const vehicle = vehiculos.find(v => String(v.id) === String(vehiculoId));
+            if (!vehicle) { alert('No se encuentra ese vehículo en el registro.'); return; }
+            const descripcion = `${[vehicle.marca, vehicle.modelo].filter(Boolean).join(' ') || 'Vehículo'}${vehicle.matricula ? ' / ' + vehicle.matricula : ''}`;
+            if (!confirm(`¿Quieres quitar la vinculación de ${descripcion} con esta persona?
+
+El vehículo seguirá en el registro general; solo se quitará su asociación con esta ficha.`)) return;
+            const personId = currentNoteId || personFormStableId;
+            vehiculos = vehiculos.map(v => String(v.id) === String(vehiculoId)
+                ? { ...v, titular_persona_id: String(v.titular_persona_id || '') === String(personId) ? '' : v.titular_persona_id }
+                : v);
+            await saveIDBData('id_vehiculos', vehiculos);
+            await saveToLocalFolder();
+            renderPersonFormVehicles();
+        }
+
+        function borrarDatoAntiguoVehiculoPersona() {
+            if (!confirm('¿Quieres borrar de esta ficha el vehículo/matrícula anotado antiguamente? Esta acción solo borrará esos campos de la persona; no eliminará ningún vehículo del registro general.')) return;
+            const vehiculoInput = document.getElementById('vehiculo');
+            const matriculaInput = document.getElementById('matricula');
+            if (vehiculoInput) vehiculoInput.value = '';
+            if (matriculaInput) matriculaInput.value = '';
+            renderPersonFormVehicles();
+        }
+
+        async function createVehicleFromPersonForm() {
+            const mat = document.getElementById('person_vehicle_matricula').value.trim().toUpperCase();
+            if (!mat) { alert('Introduce la matrícula para crear la ficha del vehículo.'); return; }
+            const personId = currentNoteId || personFormStableId;
+            if (!personId) { alert('No se ha podido identificar la ficha de la persona.'); return; }
+            const existingVehicle = vehiculos.find(v => String(v.matricula || '').trim().toUpperCase() === mat);
+            if (existingVehicle) {
+                if (String(existingVehicle.titular_persona_id || '') === String(personId)) {
+                    alert('Ese vehículo ya está registrado y asociado a esta persona.');
+                    togglePersonMiniVehicleForm(false);
+                    renderPersonFormVehicles();
+                    return;
+                }
+                alert('Ya existe un vehículo registrado con esa matrícula. Para evitar duplicados, abre su ficha y revisa la asociación.');
+                return;
+            }
+            const personName = document.getElementById('nombre').value.trim();
+            const personDoc = document.getElementById('documento').value.trim().toUpperCase();
+            const vehicle = {
+                id: Date.now().toString() + Math.random().toString(36).slice(2, 6),
+                fecha_creacion: new Date().toLocaleString('es-ES'),
+                matricula: mat,
+                marca: document.getElementById('person_vehicle_marca').value.trim(),
+                modelo: document.getElementById('person_vehicle_modelo').value.trim(),
+                color: '', vin: '',
+                titular_persona_id: String(personId),
+                titular: personName,
+                documento_titular: personDoc,
+                anotaciones: '', fotos: []
+            };
+            vehiculos.unshift(vehicle);
+            await saveIDBData('id_vehiculos', vehiculos);
+            await saveToLocalFolder();
+            togglePersonMiniVehicleForm(false);
+            renderPersonFormVehicles();
+            alert('Vehículo registrado y vinculado. Al guardar la ficha de la persona, la asociación quedará guardada con sus datos actualizados.');
         }
 
         function checkReincidencia() {
@@ -1373,7 +1512,7 @@
             const existingNote = currentNoteId ? notes.find(n => String(n.id) === String(currentNoteId)) : null;
 
             const personData = {
-                id: currentNoteId || Date.now().toString(),
+                id: currentNoteId || personFormStableId || Date.now().toString(),
                 fecha_creacion: existingNote ? existingNote.fecha_creacion : new Date().toLocaleString('es-ES'),
                 nombre: nombre,
                 documento: document.getElementById('documento').value.trim().toUpperCase(),
@@ -1382,6 +1521,7 @@
                 telefono: document.getElementById('telefono').value.trim(),
                 padres: document.getElementById('padres').value.trim(),
                 domicilio: document.getElementById('domicilio').value.trim(),
+                observaciones: document.getElementById('persona_observaciones').value.trim(),
                 vehiculo: document.getElementById('vehiculo').value.trim(),
                 matricula: document.getElementById('matricula').value.trim().toUpperCase(),
                 fotos: [...currentPhotosPerson],
@@ -1396,8 +1536,27 @@
             }
 
             await saveIDBData('id_notes', notes);
+            // Mantener actualizado el nombre y documento visibles en los vehículos asociados.
+            let vehiculosTitularActualizado = false;
+            vehiculos = vehiculos.map(v => {
+                if (String(v.titular_persona_id || '') !== String(personData.id)) return v;
+                vehiculosTitularActualizado = true;
+                return { ...v, titular: personData.nombre || '', documento_titular: personData.documento || '' };
+            });
+            if (vehiculosTitularActualizado) await saveIDBData('id_vehiculos', vehiculos);
             await saveToLocalFolder();
 
+            if (returnToVehicleAfterPersonSave) {
+                returnToVehicleAfterPersonSave = false;
+                renderTitularPersonaOptions(personData.id);
+                document.getElementById('v_persona_id').value = String(personData.id);
+                selectTitularPersona();
+                document.getElementById('form-vehiculo-title').innerText = currentVehiculoId ? 'Editar Vehículo' : 'Nuevo Vehículo';
+                personFormStableId = null;
+                showScreen('screen-form-vehiculo');
+                return;
+            }
+            personFormStableId = null;
             showScreen('screen-archive');
         }
 
@@ -1455,34 +1614,6 @@
             }
         }
 
-        async function handlePersonFacePhoto(event) {
-            const file = event.target.files && event.target.files[0];
-            event.target.value = '';
-            if (!file || !currentNoteId) return;
-            const persona = notes.find(item => String(item.id) === String(currentNoteId));
-            if (!persona) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                compressImage(e.target.result, 700, 0.86, async (compressedBase64) => {
-                    persona.fotoCara = compressedBase64;
-                    await saveIDBData('id_notes', notes);
-                    await saveToLocalFolder();
-                    viewPersonDetail(persona.id);
-                });
-            };
-            reader.readAsDataURL(file);
-        }
-
-        async function removePersonFacePhoto(personId) {
-            const persona = notes.find(item => String(item.id) === String(personId));
-            if (!persona || !persona.fotoCara) return;
-            if (!confirm('¿Quitar la fotografía de cara de esta ficha?')) return;
-            persona.fotoCara = '';
-            await saveIDBData('id_notes', notes);
-            await saveToLocalFolder();
-            viewPersonDetail(persona.id);
-        }
-
         /* VISTA DETALLADA DE PERSONA CON HISTORIAL DE ACTUACIONES */
         function viewPersonDetail(id) {
             currentNoteId = id;
@@ -1503,22 +1634,31 @@
             }
 
             let actuacionesHTML = renderActuacionesHTML(n);
+            const vehiculosAsociados = vehiculos.filter(v => String(v.titular_persona_id || '') === String(n.id));
+            const vehiculosAsociadosHTML = vehiculosAsociados.map(v => `<div class="vinculo-search-result" role="button" tabindex="0" style="margin:6px 0;" onclick="viewVehiculoDetail('${v.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();viewVehiculoDetail('${v.id}');}"><div style="font-weight:700;color:var(--text-white);">🚘 ${[v.marca, v.modelo].filter(Boolean).join(' ') || 'Vehículo sin marca/modelo'} / ${v.matricula || 'Sin matrícula'}</div><div style="font-size:.75rem;color:var(--text-muted);margin-top:3px;">Toca para consultar la ficha completa${v.color ? ' · Color: ' + v.color : ''} ›</div></div>`).join('');
+            // El vehículo/matrícula introducido directamente en la ficha es independiente de los vehículos registrados.
+            // Se conserva y se muestra salvo que sea exactamente el mismo vehículo que uno ya asociado.
+            const manualVehiculo = String(n.vehiculo || '').trim();
+            const manualMatricula = String(n.matricula || '').trim();
+            const manualCoincideConAsociado = vehiculosAsociados.some(v =>
+                manualMatricula && String(v.matricula || '').trim().toUpperCase() === manualMatricula.toUpperCase() &&
+                manualVehiculo.toUpperCase() === [v.marca, v.modelo].filter(Boolean).join(' ').trim().toUpperCase()
+            );
+            const vehiculoManualHTML = (manualVehiculo || manualMatricula) && !manualCoincideConAsociado
+                ? `<div class="detail-value" style="margin:6px 0;">🚘 ${manualVehiculo || 'Vehículo sin descripción'}${manualMatricula ? ' / ' + manualMatricula : ''}<div style="font-size:.75rem;color:var(--text-muted);margin-top:3px;">Dato anotado directamente en la ficha personal</div></div>`
+                : '';
+            const vehiculoPersonaHTML = (vehiculosAsociadosHTML + vehiculoManualHTML) || '<div class="detail-value">-</div>';
 
             container.innerHTML = `
                 <button type="button" class="btn-share-compact" onclick="exportSharedPerson('${n.id}')" title="Compartir ficha y actuaciones">📤 Compartir ficha y actuaciones</button>
-                <div class="person-identity-header">
-                    <div class="person-face-wrap">
-                        ${n.fotoCara ? `<img class="person-face" src="${n.fotoCara}" alt="Fotografía de ${n.nombre || 'la persona'}" onclick="openLightbox('${n.fotoCara}')">` : `<div class="person-face-placeholder" aria-label="Sin fotografía de cara"><span>👤</span><span style="font-size:.58rem">Sin foto</span></div>`}
-                        <div class="person-face-actions"><button type="button" class="person-face-btn" onclick="document.getElementById('person-face-file').click()">📷 ${n.fotoCara ? 'Cambiar' : 'Añadir cara'}</button>${n.fotoCara ? `<button type="button" class="person-face-btn" onclick="removePersonFacePhoto('${n.id}')" title="Quitar foto">✕</button>` : ''}</div>
-                    </div>
-                    <div class="person-identity-name">${n.nombre || 'Persona sin nombre'}</div>
-                </div>
+                <div style="padding:12px;margin-bottom:10px;border:1px solid var(--border-subtle);border-radius:var(--radius-medium);background:var(--card-glass);color:var(--accent-gold);font-size:1.12rem;font-weight:800;overflow-wrap:anywhere;">👤 ${n.nombre || 'Persona sin nombre'}</div>
                 <div class="detail-group"><div class="detail-label">🪪 Nº Documento</div><div class="detail-value">${n.documento || '-'}</div></div>
                 <div class="detail-group"><div class="detail-label">🌍 Lugar y Fecha Nacimiento</div><div class="detail-value">${n.lugar_nac || '-'} ${n.fecha_nac ? '(' + n.fecha_nac + ')' : ''}</div></div>
                 <div class="detail-group"><div class="detail-label">📞 Teléfono</div><div class="detail-value">${n.telefono || '-'}</div></div>
                 <div class="detail-group"><div class="detail-label">👨‍👩‍👦 Padres</div><div class="detail-value">${n.padres || '-'}</div></div>
                 <div class="detail-group"><div class="detail-label">🏠 Domicilio</div><div class="detail-value">${n.domicilio || '-'}</div></div>
-                <div class="detail-group"><div class="detail-label">🚘 Vehículo / Matrícula</div><div class="detail-value">${n.vehiculo || '-'} ${n.matricula ? '[' + n.matricula + ']' : ''}</div></div>
+                <div class="detail-group"><div class="detail-label">📝 Observaciones</div><div class="detail-value" style="white-space:pre-wrap;">${n.observaciones || 'Sin observaciones.'}</div></div>
+                <div class="detail-group"><div class="detail-label">🚘 Vehículo / Matrícula</div>${vehiculoPersonaHTML}</div>
                 ${photosHTML}
 
                 <button class="detail-section-button" onclick="openPersonVinculosScreen('${n.id}')">
@@ -2233,17 +2373,99 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
             } catch(e) { return isoStr; }
         }
 
+        /* ASOCIACIÓN DE VEHÍCULOS CON PERSONAS REGISTRADAS */
+        function renderTitularPersonaOptions(selectedId = '') {
+            const hidden = document.getElementById('v_persona_id');
+            const search = document.getElementById('v_persona_busqueda');
+            const results = document.getElementById('v_persona_resultados');
+            if (!hidden || !search || !results) return;
+            hidden.value = selectedId ? String(selectedId) : '';
+            const persona = selectedId ? notes.find(n => String(n.id) === String(selectedId)) : null;
+            search.value = persona ? `${persona.nombre || 'Persona sin nombre'}${persona.documento ? ' · ' + persona.documento : ''}` : '';
+            results.innerHTML = '';
+        }
+
+        function buscarTitularPersona() {
+            const search = document.getElementById('v_persona_busqueda');
+            const hidden = document.getElementById('v_persona_id');
+            const results = document.getElementById('v_persona_resultados');
+            const term = search.value.trim().toLowerCase();
+            hidden.value = '';
+            if (!term) { results.innerHTML = ''; return; }
+            const encontrados = [...notes].filter(n =>
+                (n.nombre && n.nombre.toLowerCase().includes(term)) ||
+                (n.documento && n.documento.toLowerCase().includes(term)) ||
+                (n.telefono && n.telefono.toLowerCase().includes(term))
+            ).sort((a,b) => String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es')).slice(0, 20);
+            if (!encontrados.length) {
+                results.innerHTML = '<div style="font-size:.78rem;color:var(--text-muted);padding:6px 2px;">No se han encontrado personas. Puedes registrar una nueva.</div>';
+                return;
+            }
+            results.innerHTML = encontrados.map(n => `<div class="vinculo-search-result" onclick="seleccionarTitularVehiculo('${n.id}')"><div style="font-weight:700;color:var(--text-white);">👤 ${n.nombre || 'Sin nombre'}</div><div style="font-size:.75rem;color:var(--text-muted);margin-top:3px;">🪪 ${n.documento || 'SIN DOCUMENTO'} · 📞 ${n.telefono || 'N/A'}</div></div>`).join('');
+        }
+
+        function seleccionarTitularVehiculo(personaId) {
+            const persona = notes.find(n => String(n.id) === String(personaId));
+            if (!persona) return;
+            document.getElementById('v_persona_id').value = String(persona.id);
+            document.getElementById('v_persona_busqueda').value = `${persona.nombre || 'Persona sin nombre'}${persona.documento ? ' · ' + persona.documento : ''}`;
+            document.getElementById('v_persona_resultados').innerHTML = '';
+            selectTitularPersona();
+        }
+
+        function limpiarTitularPersona() {
+            document.getElementById('v_persona_id').value = '';
+            document.getElementById('v_persona_busqueda').value = '';
+            document.getElementById('v_persona_resultados').innerHTML = '';
+        }
+
+        function selectTitularPersona() {
+            const id = document.getElementById('v_persona_id').value;
+            const persona = id ? notes.find(n => String(n.id) === String(id)) : null;
+            if (persona) {
+                document.getElementById('v_titular').value = persona.nombre || '';
+                document.getElementById('v_documento_titular').value = persona.documento || '';
+            }
+        }
+
+        function actualizarCamposVehiculoPersona(personaId, vehiculoAnterior = null, vehiculoPreferidoId = '') {
+            // No copiar ni borrar datos del campo manual vehículo/matrícula de la persona.
+            // Los vehículos registrados se muestran desde su propio registro y permanecen vinculados por titular_persona_id.
+            // Así se evita perder una matrícula anotada antes de registrar el vehículo en el módulo de vehículos.
+            return false;
+        }
+
+        function createPersonForVehicle() {
+            returnToVehicleAfterPersonSave = true;
+            openNewNote();
+            document.getElementById('form-title').innerText = 'Nueva Persona (asociar al vehículo)';
+        }
+
         /* GESTIÓN DE VEHÍCULOS */
         function openNewVehiculo() {
+            returnToVehicleListAfterPersonVehicleSave = false;
             currentVehiculoId = null;
             currentPhotosVehicle = [];
             document.getElementById('vehiculo-form').reset();
             document.getElementById('vehiculo-id').value = '';
             document.getElementById('form-vehiculo-title').innerText = "Nuevo Vehículo";
+            renderTitularPersonaOptions('');
             document.getElementById('reincidencia-vehiculo-alert').style.display = 'none';
 
             renderGallery('vehicle');
             showScreen('screen-form-vehiculo');
+        }
+
+        function openNewVehiculoFromPerson(personaId) {
+            const persona = notes.find(n => String(n.id) === String(personaId));
+            if (!persona) return;
+            openNewVehiculo();
+            returnToVehicleListAfterPersonVehicleSave = true;
+            document.getElementById('v_persona_id').value = String(persona.id);
+            document.getElementById('v_persona_busqueda').value = `${persona.nombre || 'Persona sin nombre'}${persona.documento ? ' · ' + persona.documento : ''}`;
+            document.getElementById('v_titular').value = persona.nombre || '';
+            document.getElementById('v_documento_titular').value = persona.documento || '';
+            document.getElementById('v_persona_resultados').innerHTML = '';
         }
 
         function checkReincidenciaVehiculo() {
@@ -2272,6 +2494,8 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
                 return;
             }
 
+            const personaSeleccionadaId = document.getElementById('v_persona_id').value;
+            const personaSeleccionada = personaSeleccionadaId ? notes.find(n => String(n.id) === String(personaSeleccionadaId)) : null;
             const vehiculoData = {
                 id: currentVehiculoId || Date.now().toString(),
                 fecha_creacion: new Date().toLocaleString('es-ES'),
@@ -2280,21 +2504,36 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
                 modelo: document.getElementById('v_modelo').value.trim(),
                 color: document.getElementById('v_color').value.trim(),
                 vin: document.getElementById('v_vin').value.trim().toUpperCase(),
-                titular: document.getElementById('v_titular').value.trim(),
-                documento_titular: document.getElementById('v_documento_titular').value.trim(),
+                titular_persona_id: personaSeleccionada ? personaSeleccionada.id : '',
+                titular: personaSeleccionada ? (personaSeleccionada.nombre || '') : document.getElementById('v_titular').value.trim(),
+                documento_titular: personaSeleccionada ? (personaSeleccionada.documento || '') : document.getElementById('v_documento_titular').value.trim(),
                 anotaciones: document.getElementById('v_anotaciones').value.trim(),
                 fotos: [...currentPhotosVehicle]
             };
 
+            const vehiculoAnterior = currentVehiculoId ? vehiculos.find(v => String(v.id) === String(currentVehiculoId)) : null;
             if (currentVehiculoId) {
-                vehiculos = vehiculos.map(v => v.id === currentVehiculoId ? vehiculoData : v);
+                vehiculos = vehiculos.map(v => String(v.id) === String(currentVehiculoId) ? vehiculoData : v);
             } else {
                 vehiculos.unshift(vehiculoData);
             }
 
+            let personasActualizadas = false;
+            const idsPersonasAActualizar = new Set();
+            if (vehiculoAnterior && vehiculoAnterior.titular_persona_id) idsPersonasAActualizar.add(String(vehiculoAnterior.titular_persona_id));
+            if (vehiculoData.titular_persona_id) idsPersonasAActualizar.add(String(vehiculoData.titular_persona_id));
+            idsPersonasAActualizar.forEach(pid => {
+                if (actualizarCamposVehiculoPersona(pid, vehiculoAnterior, vehiculoData.id)) personasActualizadas = true;
+            });
+
             await saveIDBData('id_vehiculos', vehiculos);
+            if (personasActualizadas) await saveIDBData('id_notes', notes);
             await saveToLocalFolder();
 
+            if (returnToVehicleListAfterPersonVehicleSave) {
+                returnToVehicleListAfterPersonVehicleSave = false;
+                currentActiveTab = 'vehiculos';
+            }
             showScreen('screen-archive');
         }
 
@@ -2309,24 +2548,18 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
 
             list.forEach(v => {
                 const card = document.createElement('div');
-                card.className = 'card';
+                card.className = 'card vehicle-compact-card';
                 card.onclick = () => viewVehiculoDetail(v.id);
 
                 const matMostrar = v.matricula || "SIN MATRÍCULA";
                 const descVehiculo = [v.marca, v.modelo].filter(Boolean).join(' ') || "Vehículo sin datos";
-                const colorMostrar = v.color ? ` | 🎨 ${v.color}` : "";
+                const titularMostrar = v.titular || 'N/A';
 
                 card.innerHTML = `
-                    <button class="btn-delete-card" title="Eliminar vehículo" data-id="${v.id}">
-                        🗑️
-                    </button>
-                    <div class="card-header-row">
-                        <span class="card-title">🚘 ${matMostrar}</span>
-                        <span class="badge-cat cat-trafico">VEHÍCULO</span>
-                    </div>
-                    <div class="card-sub" style="color:#fff; font-weight:600; margin-top:2px;">🏎 ${descVehiculo}${colorMostrar}</div>
-                    <div class="card-sub">👤 Titular/Conductor: ${v.titular || 'N/A'} ${v.documento_titular ? '(' + v.documento_titular + ')' : ''}</div>
-                    <div class="card-sub" style="font-size: 0.75rem; margin-top: 4px;">📅 Registrado: ${v.fecha_creacion || ''} ${v.fotos && v.fotos.length ? '📸 (' + v.fotos.length + ')' : ''}</div>
+                    <button class="btn-delete-card" title="Eliminar vehículo" data-id="${v.id}">🗑️</button>
+                    <div class="card-sub" style="color:var(--accent-gold);font-weight:800;margin-top:0;">🔢 ${matMostrar}</div>
+                    <div class="card-sub" style="color:#fff;font-weight:600;">🏎 ${descVehiculo}</div>
+                    <div class="card-sub">👤 ${titularMostrar}</div>
                 `;
 
                 const deleteBtn = card.querySelector('.btn-delete-card');
@@ -2341,8 +2574,14 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
 
         async function deleteVehiculoDirect(id, mat) {
             if (confirm(`¿Deseas eliminar la ficha del vehículo "${mat}"?`)) {
+                const vehiculoEliminado = vehiculos.find(v => String(v.id) === String(id));
                 vehiculos = vehiculos.filter(v => String(v.id) !== String(id));
+                let personaActualizada = false;
+                if (vehiculoEliminado && vehiculoEliminado.titular_persona_id) {
+                    personaActualizada = actualizarCamposVehiculoPersona(vehiculoEliminado.titular_persona_id, vehiculoEliminado, '');
+                }
                 await saveIDBData('id_vehiculos', vehiculos);
+                if (personaActualizada) await saveIDBData('id_notes', notes);
                 await saveToLocalFolder();
                 filterCurrentTab();
             }
@@ -2371,7 +2610,7 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
                 <div class="detail-group"><div class="detail-label">🏎️ Marca / Modelo</div><div class="detail-value">${v.marca || '-'} ${v.modelo || ''}</div></div>
                 <div class="detail-group"><div class="detail-label">🎨 Color</div><div class="detail-value">${v.color || '-'}</div></div>
                 <div class="detail-group"><div class="detail-label">🛠️ Bastidor (VIN)</div><div class="detail-value">${v.vin || '-'}</div></div>
-                <div class="detail-group"><div class="detail-label">👤 Conductor / Titular</div><div class="detail-value">${v.titular || '-'}</div></div>
+                <div class="detail-group"><div class="detail-label">👤 Conductor / Titular</div><div class="detail-value">${v.titular || '-'}</div>${v.titular_persona_id && notes.some(n => String(n.id) === String(v.titular_persona_id)) ? `<div class="detail-value" style="margin-top:6px;color:var(--accent-gold);cursor:pointer;text-decoration:underline;" onclick="viewPersonDetail('${v.titular_persona_id}')">Abrir ficha de la persona asociada</div>` : ''}</div>
                 <div class="detail-group"><div class="detail-label">🪪 Documento Titular</div><div class="detail-value">${v.documento_titular || '-'}</div></div>
                 <div class="detail-group"><div class="detail-label">📝 Anotaciones / Observaciones</div><div class="detail-value">${v.anotaciones || 'Sin anotaciones.'}</div></div>
                 <div class="detail-group"><div class="detail-label">📅 Fecha de Registro</div><div class="detail-value">${v.fecha_creacion || '-'}</div></div>
@@ -2925,7 +3164,18 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
                 doc.text("Vehículo / Matrícula:", 15, y);
                 doc.setFont("helvetica", "normal");
                 doc.text(`${n.vehiculo || '-'} ${n.matricula ? '[' + n.matricula + ']' : ''}`, 60, y);
-                y += 12;
+                y += 8;
+
+                doc.setFont("helvetica", "bold");
+                doc.text("Observaciones:", 15, y);
+                doc.setFont("helvetica", "normal");
+                const observacionesPersonaLines = doc.splitTextToSize(n.observaciones || 'Sin observaciones.', 130);
+                for (let i = 0; i < observacionesPersonaLines.length; i++) {
+                    if (y > 275) { doc.addPage(); y = 20; }
+                    doc.text(observacionesPersonaLines[i], 60, y);
+                    y += 5;
+                }
+                y += 4;
 
                 doc.line(15, y, 195, y);
                 y += 8;
@@ -3221,7 +3471,7 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
                     lugar_nac: persona.lugar_nac || '', fecha_nac: persona.fecha_nac || '',
                     telefono: persona.telefono || '', padres: persona.padres || '',
                     domicilio: persona.domicilio || '', vehiculo: persona.vehiculo || '',
-                    matricula: persona.matricula || '', fotos: Array.isArray(persona.fotos) ? persona.fotos : [], fotoCara: persona.fotoCara || ''
+                    matricula: persona.matricula || '', observaciones: persona.observaciones || '', fotos: Array.isArray(persona.fotos) ? persona.fotos : []
                 },
                 actuaciones
             };
@@ -3281,7 +3531,6 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
                     } else if (!Array.isArray(personaDestino.actuaciones)) {
                         personaDestino.actuaciones = [];
                     }
-                    if (!personaDestino.fotoCara && datosPersona.fotoCara) personaDestino.fotoCara = datosPersona.fotoCara;
 
                     let importadas = 0;
                     let duplicadas = 0;
