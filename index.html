@@ -588,7 +588,25 @@
                 <div id="avisos-list"></div>
             </div>
 
-            <!-- 5. FORMULARIO PERSONAS (FICHA DE DATOS FIJOS) -->
+            <!-- 5. PANTALLA GENERAL DE INTERVENCIONES -->
+            <div id="screen-intervenciones" class="screen">
+                <div class="header-title">
+                    <div class="section-header-title">
+                        <div class="folder-icon-badge"><svg viewBox="0 0 24 24"><path d="M12 2 3 6v5c0 5.25 3.84 10.17 9 11 5.16-.83 9-5.75 9-11V6l-9-4zm-1 14-4-4 1.41-1.41L11 13.17l4.59-4.58L17 10l-6 6z"/></svg></div>
+                        <h2 class="section-title-text">Intervenciones</h2>
+                    </div>
+                    <button class="btn-inline" style="padding:8px 12px;" onclick="crearIntervencionDesdeListado()">➕ Nueva intervención</button>
+                </div>
+                <div class="list-tools">
+                    <input type="text" id="intervenciones-search" placeholder="🔍 Buscar número, categoría, lugar o persona..." oninput="renderIntervenciones()" style="margin:0;">
+                    <select id="intervenciones-sort" aria-label="Ordenar intervenciones" onchange="renderIntervenciones()" style="margin:0;">
+                        <option value="recientes">Más recientes</option><option value="antiguos">Más antiguas</option><option value="numero">Número de intervención</option>
+                    </select>
+                </div>
+                <div id="intervenciones-list"></div>
+            </div>
+
+            <!-- 6. FORMULARIO PERSONAS (FICHA DE DATOS FIJOS) -->
             <div id="screen-form" class="screen">
                 <div class="header-title">
                     <button class="btn-back" onclick="showScreen('screen-archive')">← Volver</button>
@@ -800,6 +818,10 @@
             <button id="nav-avisos" class="nav-item" onclick="showScreen('screen-avisos')">
                 <svg viewBox="0 0 24 24"><path d="M20 15.5c-1.25 0-2.45-.2-3.57-.57-.35-.11-.74-.03-1.02.24l-2.2 2.2c-2.83-1.44-5.15-3.75-6.59-6.59l2.2-2.21c.28-.26.36-.65.25-1C8.7 6.45 8.5 5.25 8.5 4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.5c0-.55-.45-1-1-1zM12 3v10l3-3h5V3h-8z"/></svg>
                 <span>Avisos</span>
+            </button>
+            <button id="nav-intervenciones" class="nav-item" onclick="showScreen('screen-intervenciones')">
+                <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 5v5.2l3.2 1.9-1 1.7L11 13V7h2z"/></svg>
+                <span>Intervenciones</span>
             </button>
             <button id="nav-home" class="nav-item" onclick="showScreen('screen-home')">
                 <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6-3.6z"/></svg>
@@ -1242,6 +1264,9 @@
             } else if (id === 'screen-avisos') {
                 document.getElementById('nav-avisos').classList.add('active');
                 renderAvisos();
+            } else if (id === 'screen-intervenciones') {
+                document.getElementById('nav-intervenciones').classList.add('active');
+                renderIntervenciones();
             }
         }
 
@@ -2199,11 +2224,12 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
             document.getElementById('modal-actuacion').classList.remove('active');
             currentActuacionImplicados = [];
             currentActuacionAvisoId = null;
+            volverAListadoIntervenciones = false;
         }
 
         async function saveActuacionModal() {
             const n = currentNoteId ? notes.find(item => String(item.id) === String(currentNoteId)) : null;
-            if (!n && !currentActuacionAvisoId) return;
+            if (!n && !currentActuacionAvisoId && !volverAListadoIntervenciones) return;
             if (!currentActuacionImplicados.length) {
                 alert('Añade al menos una persona implicada en la actuación.');
                 return;
@@ -2256,9 +2282,11 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
 
             const personaRetorno = currentNoteId;
             const avisoRetorno = currentActuacionAvisoId;
+            const intervencionesRetorno = volverAListadoIntervenciones;
             closeActuacionModal();
             if (personaRetorno) openPersonActuacionesScreen(personaRetorno);
             else if (avisoRetorno) { showScreen('screen-avisos'); renderAvisos(); }
+            else if (intervencionesRetorno) { showScreen('screen-intervenciones'); renderIntervenciones(); }
         }
 
         async function deleteActuacion(personId, actuacionId) {
@@ -2311,6 +2339,64 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
                 if (a) return a;
             }
             return null;
+        }
+
+        let volverAListadoIntervenciones = false;
+        function crearIntervencionDesdeListado() {
+            // Las actuaciones se guardan y distribuyen en las fichas de las personas implicadas.
+            volverAListadoIntervenciones = true;
+            openActuacionModal();
+        }
+
+        function renderIntervenciones() {
+            const cont = document.getElementById('intervenciones-list');
+            if (!cont) return;
+            const q = (document.getElementById('intervenciones-search')?.value || '').trim().toLowerCase();
+            const sort = document.getElementById('intervenciones-sort')?.value || 'recientes';
+            let items = obtenerActuacionesUnicas().slice();
+            const personasTexto = a => (Array.isArray(a.implicados) ? a.implicados : []).map(imp => {
+                const p = notes.find(n => String(n.id) === String(imp.personaId));
+                return p ? `${p.nombre || ''} ${p.documento || ''} ${p.telefono || ''}` : '';
+            }).join(' ');
+            items = items.filter(a => `${a.registro || ''} ${getCatLabel(a.categoria)} ${a.lugar || ''} ${a.hechos || ''} ${a.avisoRegistro || ''} ${personasTexto(a)}`.toLowerCase().includes(q));
+            items.sort((a,b) => {
+                if (sort === 'numero') return String(a.registro || '').localeCompare(String(b.registro || ''), 'es', {numeric:true});
+                const d = String(a.fecha || '').localeCompare(String(b.fecha || ''));
+                return sort === 'antiguos' ? d : -d;
+            });
+            if (!items.length) {
+                cont.innerHTML = '<div class="empty-state" style="padding:24px;text-align:center;color:var(--text-muted);">No hay intervenciones que coincidan con la búsqueda.</div>';
+                return;
+            }
+            cont.innerHTML = items.map(a => {
+                const implicados = (Array.isArray(a.implicados) ? a.implicados : []).map(imp => {
+                    const p = notes.find(n => String(n.id) === String(imp.personaId));
+                    return p ? (p.nombre || 'Sin nombre') : '';
+                }).filter(Boolean);
+                const personaRef = (a.implicados || []).map(x => notes.find(n => String(n.id) === String(x.personaId))).find(Boolean);
+                const fecha = formatFechaHora(a.fecha);
+                const resumen = (a.hechos || '').trim();
+                return `<div class="record-card" style="cursor:pointer;margin-bottom:9px;padding:12px;border:1px solid var(--border-subtle);border-radius:12px;background:var(--card-glass);" onclick="abrirIntervencionDesdeListado('${String(a.id).replace(/'/g, "\\'")}')">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+                        <div style="min-width:0;flex:1;"><div style="font-weight:800;color:var(--accent-gold);">${a.registro || 'Intervención'} · ${getCatLabel(a.categoria)}</div>
+                        <div style="font-size:.82rem;margin-top:4px;">🕒 ${fecha || 'Fecha no indicada'} · 📍 ${a.lugar || 'Lugar no indicado'}</div>
+                        <div style="font-size:.8rem;color:var(--text-muted);margin-top:4px;">👥 ${implicados.join(', ') || 'Sin persona asociada'}</div>
+                        ${resumen ? `<div style="font-size:.8rem;color:var(--text-muted);margin-top:5px;">${resumen.length > 150 ? resumen.slice(0,150)+'…' : resumen}</div>` : ''}
+                        ${a.avisoRegistro ? `<div style="font-size:.75rem;color:var(--text-muted);margin-top:4px;">📞 Aviso vinculado: ${a.avisoRegistro}</div>` : ''}</div>
+                        <span style="color:var(--text-muted);font-size:1.2rem;">›</span></div></div>`;
+            }).join('');
+        }
+
+        function abrirIntervencionDesdeListado(actuacionId) {
+            const a = obtenerActuacionesUnicas().find(x => String(x.id) === String(actuacionId));
+            if (!a) return;
+            const implicados = Array.isArray(a.implicados) ? a.implicados : [];
+            const persona = implicados.map(imp => notes.find(n => String(n.id) === String(imp.personaId))).find(Boolean);
+            if (persona) {
+                openActuacionView(persona.id, a.id);
+            } else {
+                alert('Esta intervención no tiene una ficha de persona asociada desde la que abrir el detalle.');
+            }
         }
 
         function obtenerActuacionesUnicas() {
