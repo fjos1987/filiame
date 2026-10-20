@@ -1046,6 +1046,8 @@
         let notes = [];
         let vehiculos = [];
         let avisos = [];
+        // Intervenciones que no tienen ninguna persona vinculada a una ficha local.
+        let intervencionesIndependientes = [];
         
         let currentPhotosPerson = [];
         let currentPhotosVehicle = [];
@@ -1153,6 +1155,7 @@
 
             vehiculos = (await getIDBData('id_vehiculos')) || [];
             avisos = (await getIDBData('id_avisos')) || [];
+            intervencionesIndependientes = (await getIDBData('id_intervenciones')) || [];
             await ensureRegistroNumbers();
 
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -1235,7 +1238,7 @@
                     updateFolderButtonState('paused');
                     return;
                 }
-                const fullData = { notes: notes, vehiculos: vehiculos, avisos: avisos };
+                const fullData = { notes: notes, vehiculos: vehiculos, avisos: avisos, intervencionesIndependientes: intervencionesIndependientes };
                 const fileHandle = await directoryHandle.getFileHandle('filiame_base_datos.json', { create: true });
                 const writable = await fileHandle.createWritable();
                 await writable.write(JSON.stringify(fullData, null, 2));
@@ -1561,6 +1564,7 @@ El vehículo seguirá en el registro general; solo se quitará su asociación co
             }
 
             await saveIDBData('id_notes', notes);
+            await saveIDBData('id_intervenciones', intervencionesIndependientes); 
             // Mantener actualizado el nombre y documento visibles en los vehículos asociados.
             let vehiculosTitularActualizado = false;
             vehiculos = vehiculos.map(v => {
@@ -1634,6 +1638,7 @@ El vehículo seguirá en el registro general; solo se quitará su asociación co
                     if (Array.isArray(n.vinculos)) n.vinculos = n.vinculos.filter(v => String(v.personaId) !== String(id));
                 });
                 await saveIDBData('id_notes', notes);
+            await saveIDBData('id_intervenciones', intervencionesIndependientes); 
                 await saveToLocalFolder();
                 filterCurrentTab();
             }
@@ -1741,9 +1746,8 @@ El vehículo seguirá en el registro general; solo se quitará su asociación co
         }
 
         function openActuacionView(personId, actuacionId) {
-            const persona = notes.find(item => String(item.id) === String(personId));
-            if (!persona || !Array.isArray(persona.actuaciones)) return;
-            const a = persona.actuaciones.find(item => String(item.id) === String(actuacionId));
+            const persona = personId ? notes.find(item => String(item.id) === String(personId)) : null;
+            const a = (persona && Array.isArray(persona.actuaciones) ? persona.actuaciones.find(item => String(item.id) === String(actuacionId)) : null) || buscarActuacionUnica(actuacionId);
             if (!a) return;
             window.__filiameActuacionPDFId = a.id;
             const catLabel = getCatLabel(a.categoria);
@@ -1757,12 +1761,17 @@ El vehículo seguirá en el registro general; solo se quitará su asociación co
                     <div style="font-size:.78rem;color:var(--accent-gold);margin-top:4px;">🔹 ${imp.implicacion || 'No especificada'}</div>
                 </div>`;
             }).join('') : '';
-            const implicadosExternosHTML = (Array.isArray(a.implicadosExternos) ? a.implicadosExternos : []).map(imp => `
+            const implicadosExternosHTML = (Array.isArray(a.implicadosExternos) ? a.implicadosExternos : []).map((imp, index) => `
                 <div class="detail-group" style="margin-bottom:8px;">
-                    <div class="detail-label">👤 PERSONA IMPLICADA (NO IMPORTADA COMO FICHA)</div>
+                    <div class="detail-label">👤 PERSONA IMPLICADA (SIN FICHA LOCAL)</div>
                     <div class="detail-value" style="font-weight:700;">${imp.nombre || 'Persona no identificada'}</div>
                     ${imp.documento ? `<div class="detail-value">Documento: ${imp.documento}</div>` : ''}
+                    ${imp.telefono ? `<div class="detail-value">Teléfono: ${imp.telefono}</div>` : ''}
                     <div style="font-size:.78rem;color:var(--accent-gold);margin-top:4px;">🔹 ${imp.implicacion || 'No especificada'}</div>
+                    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:8px;">
+                        <button class="btn-inline" onclick="event.stopPropagation(); crearFichaDesdeImplicadoExterno('${String(a.id).replace(/'/g, "\\'")}', ${index})">👤 Crear ficha y vincular</button>
+                        <button class="btn-inline" style="padding:5px 8px;color:var(--danger-red);border-color:rgba(255,82,82,.35);" title="Quitar implicación" onclick="event.stopPropagation(); quitarImplicadoExterno('${String(a.id).replace(/'/g, "\\'")}', ${index})">✕</button>
+                    </div>
                 </div>`).join('');
             const avisoOrigen = a.avisoId ? avisos.find(x => String(x.id) === String(a.avisoId)) : null;
             document.getElementById('ver-actuacion-content').innerHTML = `
@@ -1777,7 +1786,7 @@ El vehículo seguirá en el registro general; solo se quitará su asociación co
                 ${implicadosHTML || ''}
                 ${implicadosExternosHTML}
                 ${(!implicadosHTML && !implicadosExternosHTML) ? '<div style="font-size:.82rem;color:var(--text-muted);">No hay personas implicadas registradas.</div>' : ''}
-                <button class="btn-primary" onclick="closeVerActuacionModal(); openActuacionModal('${persona.id}', '${a.id}')">✏️ Editar Actuación</button>
+                <button class="btn-primary" onclick="closeVerActuacionModal(); openActuacionModal('${persona ? persona.id : ''}', '${a.id}')">✏️ Editar Actuación</button>
             `;
             document.getElementById('modal-ver-actuacion').classList.add('active');
         }
@@ -2184,8 +2193,8 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
             const n = personId ? notes.find(item => String(item.id) === String(personId)) : null;
             currentActuacionImplicados = [];
 
-            if (actuacionId && n && n.actuaciones) {
-                const a = n.actuaciones.find(item => String(item.id) === String(actuacionId));
+            if (actuacionId) {
+                const a = (n && n.actuaciones ? n.actuaciones.find(item => String(item.id) === String(actuacionId)) : null) || buscarActuacionUnica(actuacionId);
                 if (a) {
                     document.getElementById('actuacion-modal-title').innerText = `✏️ Editar Actuación ${a.registro || ''}`;
                     document.getElementById('actuacion_id').value = a.id;
@@ -2194,7 +2203,8 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
                     document.getElementById('actuacion_fecha').value = a.fecha || '';
                     document.getElementById('actuacion_lugar').value = a.lugar || '';
                     document.getElementById('actuacion_hechos').value = a.hechos || '';
-                    currentActuacionImplicados = normalizarImplicadosActuacion(a, personId).map(x => ({personaId:String(x.personaId), implicacion:x.implicacion || 'Identificado'}));
+                    currentActuacionImplicados = (Array.isArray(a.implicados) ? a.implicados : []).map(x => ({personaId:String(x.personaId), implicacion:x.implicacion || 'Identificado'}));
+                    if (!currentActuacionImplicados.length && personId) currentActuacionImplicados = normalizarImplicadosActuacion(a, personId).map(x => ({personaId:String(x.personaId), implicacion:x.implicacion || 'Identificado'}));
                 }
             } else {
                 document.getElementById('actuacion-modal-title').innerText = "🚨 Registrar Actuación";
@@ -2229,11 +2239,7 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
 
         async function saveActuacionModal() {
             const n = currentNoteId ? notes.find(item => String(item.id) === String(currentNoteId)) : null;
-            if (!n && !currentActuacionAvisoId && !volverAListadoIntervenciones) return;
-            if (!currentActuacionImplicados.length) {
-                alert('Añade al menos una persona implicada en la actuación.');
-                return;
-            }
+            if (!n && !currentActuacionAvisoId && !volverAListadoIntervenciones && !document.getElementById('actuacion_id').value) return;
 
             const actId = document.getElementById('actuacion_id').value || (Date.now().toString() + '_' + Math.random().toString(36).slice(2, 6));
             const accionAnterior = actId ? buscarActuacionUnica(actId) : null;
@@ -2276,8 +2282,12 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
                 if (!Array.isArray(persona.actuaciones)) persona.actuaciones = [];
                 persona.actuaciones.unshift(JSON.parse(JSON.stringify(actuacionData)));
             });
+            intervencionesIndependientes = intervencionesIndependientes.filter(x => String(x.id) !== String(actId));
+            const tienePersonaLocal = implicados.some(imp => notes.some(persona => String(persona.id) === String(imp.personaId)));
+            if (!tienePersonaLocal) intervencionesIndependientes.unshift(JSON.parse(JSON.stringify(actuacionData)));
 
             await saveIDBData('id_notes', notes);
+            await saveIDBData('id_intervenciones', intervencionesIndependientes);
             await saveToLocalFolder();
 
             const personaRetorno = currentNoteId;
@@ -2285,8 +2295,8 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
             const intervencionesRetorno = volverAListadoIntervenciones;
             closeActuacionModal();
             if (personaRetorno) openPersonActuacionesScreen(personaRetorno);
-            else if (avisoRetorno) { showScreen('screen-avisos'); renderAvisos(); }
             else if (intervencionesRetorno) { showScreen('screen-intervenciones'); renderIntervenciones(); }
+            else if (avisoRetorno) { showScreen('screen-avisos'); renderAvisos(); }
         }
 
         async function deleteActuacion(personId, actuacionId) {
@@ -2296,7 +2306,9 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
                         n.actuaciones = n.actuaciones.filter(a => String(a.id) !== String(actuacionId));
                     }
                 });
+                intervencionesIndependientes = intervencionesIndependientes.filter(a => String(a.id) !== String(actuacionId));
                 await saveIDBData('id_notes', notes);
+            await saveIDBData('id_intervenciones', intervencionesIndependientes); 
                 await saveToLocalFolder();
                 openPersonActuacionesScreen(personId);
             }
@@ -2338,7 +2350,7 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
                 const a = (persona.actuaciones || []).find(x => String(x.id) === String(actuacionId));
                 if (a) return a;
             }
-            return null;
+            return intervencionesIndependientes.find(x => String(x.id) === String(actuacionId)) || null;
         }
 
         let volverAListadoIntervenciones = false;
@@ -2354,10 +2366,13 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
             const q = (document.getElementById('intervenciones-search')?.value || '').trim().toLowerCase();
             const sort = document.getElementById('intervenciones-sort')?.value || 'recientes';
             let items = obtenerActuacionesUnicas().slice();
-            const personasTexto = a => (Array.isArray(a.implicados) ? a.implicados : []).map(imp => {
-                const p = notes.find(n => String(n.id) === String(imp.personaId));
-                return p ? `${p.nombre || ''} ${p.documento || ''} ${p.telefono || ''}` : '';
-            }).join(' ');
+            const personasTexto = a => [
+                ...(Array.isArray(a.implicados) ? a.implicados : []).map(imp => {
+                    const p = notes.find(n => String(n.id) === String(imp.personaId));
+                    return p ? `${p.nombre || ''} ${p.documento || ''} ${p.telefono || ''}` : '';
+                }),
+                ...(Array.isArray(a.implicadosExternos) ? a.implicadosExternos : []).map(imp => `${imp.nombre || ''} ${imp.documento || ''} ${imp.telefono || ''}`)
+            ].join(' ');
             items = items.filter(a => `${a.registro || ''} ${getCatLabel(a.categoria)} ${a.lugar || ''} ${a.hechos || ''} ${a.avisoRegistro || ''} ${personasTexto(a)}`.toLowerCase().includes(q));
             items.sort((a,b) => {
                 if (sort === 'numero') return String(a.registro || '').localeCompare(String(b.registro || ''), 'es', {numeric:true});
@@ -2369,10 +2384,13 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
                 return;
             }
             cont.innerHTML = items.map(a => {
-                const implicados = (Array.isArray(a.implicados) ? a.implicados : []).map(imp => {
-                    const p = notes.find(n => String(n.id) === String(imp.personaId));
-                    return p ? (p.nombre || 'Sin nombre') : '';
-                }).filter(Boolean);
+                const implicados = [
+                    ...(Array.isArray(a.implicados) ? a.implicados : []).map(imp => {
+                        const p = notes.find(n => String(n.id) === String(imp.personaId));
+                        return p ? (p.nombre || 'Sin nombre') : '';
+                    }).filter(Boolean),
+                    ...(Array.isArray(a.implicadosExternos) ? a.implicadosExternos : []).map(imp => imp.nombre || 'Persona sin ficha')
+                ];
                 const personaRef = (a.implicados || []).map(x => notes.find(n => String(n.id) === String(x.personaId))).find(Boolean);
                 const fecha = formatFechaHora(a.fecha);
                 const resumen = (a.hechos || '').trim();
@@ -2383,24 +2401,104 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
                         <div style="font-size:.8rem;color:var(--text-muted);margin-top:4px;">👥 ${implicados.join(', ') || 'Sin persona asociada'}</div>
                         ${resumen ? `<div style="font-size:.8rem;color:var(--text-muted);margin-top:5px;">${resumen.length > 150 ? resumen.slice(0,150)+'…' : resumen}</div>` : ''}
                         ${a.avisoRegistro ? `<div style="font-size:.75rem;color:var(--text-muted);margin-top:4px;">📞 Aviso vinculado: ${a.avisoRegistro}</div>` : ''}</div>
-                        <span style="color:var(--text-muted);font-size:1.2rem;">›</span></div></div>`;
+                        <div style="display:flex;flex-direction:column;align-items:center;gap:7px;flex-shrink:0;">
+                            <span style="color:var(--text-muted);font-size:1.2rem;">›</span>
+                            <button class="btn-inline" style="padding:5px 7px;background:rgba(255,82,82,.12);color:var(--danger-red);border-color:rgba(255,82,82,.3);" title="Eliminar intervención" onclick="event.stopPropagation(); eliminarIntervencionDesdeListado('${String(a.id).replace(/'/g, "\\'")}')">🗑</button>
+                        </div></div></div>`;
             }).join('');
+        }
+
+        function copiarActuacionATodasLasFichas(actuacion) {
+            const copia = JSON.parse(JSON.stringify(actuacion));
+            notes.forEach(persona => {
+                if (Array.isArray(persona.actuaciones)) {
+                    persona.actuaciones = persona.actuaciones.filter(x => String(x.id) !== String(copia.id));
+                }
+            });
+            (copia.implicados || []).forEach(imp => {
+                const persona = notes.find(n => String(n.id) === String(imp.personaId));
+                if (!persona) return;
+                if (!Array.isArray(persona.actuaciones)) persona.actuaciones = [];
+                persona.actuaciones.unshift(JSON.parse(JSON.stringify(copia)));
+            });
+            intervencionesIndependientes = intervencionesIndependientes.filter(x => String(x.id) !== String(copia.id));
+            const tienePersonaLocal = (copia.implicados || []).some(imp => notes.some(n => String(n.id) === String(imp.personaId)));
+            if (!tienePersonaLocal) intervencionesIndependientes.unshift(JSON.parse(JSON.stringify(copia)));
+        }
+
+        async function quitarImplicadoExterno(actuacionId, index) {
+            const actual = buscarActuacionUnica(actuacionId);
+            if (!actual || !Array.isArray(actual.implicadosExternos) || !actual.implicadosExternos[index]) return;
+            const externo = actual.implicadosExternos[index];
+            if (!confirm(`¿Quieres quitar a ${externo.nombre || 'esta persona'} como implicada en ${actual.registro || 'esta intervención'}?`)) return;
+            const actualizada = JSON.parse(JSON.stringify(actual));
+            actualizada.implicadosExternos.splice(index, 1);
+            copiarActuacionATodasLasFichas(actualizada);
+            await saveIDBData('id_notes', notes);
+            await saveIDBData('id_intervenciones', intervencionesIndependientes); 
+            await saveToLocalFolder();
+            const primera = (actualizada.implicados || []).map(x => notes.find(n => String(n.id) === String(x.personaId))).find(Boolean);
+            if (primera) openActuacionView(primera.id, actualizada.id);
+            else { closeVerActuacionModal(); renderIntervenciones(); }
+        }
+
+        async function crearFichaDesdeImplicadoExterno(actuacionId, index) {
+            const actual = buscarActuacionUnica(actuacionId);
+            if (!actual || !Array.isArray(actual.implicadosExternos) || !actual.implicadosExternos[index]) return;
+            const externo = actual.implicadosExternos[index];
+            const nombre = (externo.nombre || '').trim() || (prompt('Nombre y apellidos de la persona:') || '').trim();
+            if (!nombre) { alert('Introduce al menos el nombre para crear la ficha.'); return; }
+            const documento = (externo.documento || '').trim() || (prompt('DNI/NIE (opcional):') || '').trim();
+            const telefono = (externo.telefono || '').trim() || (prompt('Teléfono (opcional):') || '').trim();
+            let persona = buscarPersonaCoincidente({ nombre, documento, telefono });
+            if (!persona) {
+                persona = { id: Date.now().toString() + '_' + Math.random().toString(36).slice(2, 8), nombre, documento, telefono, lugar_nac:'', fecha_nac:'', padres:'', domicilio:'', vehiculo:'', matricula:'', observaciones:'', fotos:[], vinculos:[], actuaciones:[] };
+                notes.unshift(persona);
+            }
+            const actualizada = JSON.parse(JSON.stringify(actual));
+            const implicacion = externo.implicacion || 'Identificado';
+            if (!Array.isArray(actualizada.implicados)) actualizada.implicados = [];
+            if (!actualizada.implicados.some(x => String(x.personaId) === String(persona.id))) {
+                actualizada.implicados.push({ personaId: String(persona.id), implicacion });
+            }
+            actualizada.implicadosExternos.splice(index, 1);
+            copiarActuacionATodasLasFichas(actualizada);
+            await saveIDBData('id_notes', notes);
+            await saveIDBData('id_intervenciones', intervencionesIndependientes); 
+            await saveToLocalFolder();
+            openActuacionView(persona.id, actualizada.id);
+        }
+
+        async function eliminarIntervencionDesdeListado(actuacionId) {
+            const actual = buscarActuacionUnica(actuacionId);
+            if (!actual) return;
+            if (!confirm(`¿Eliminar definitivamente ${actual.registro || 'esta intervención'} del historial de todas las personas implicadas? Esta acción no se puede deshacer.`)) return;
+            notes.forEach(persona => {
+                if (Array.isArray(persona.actuaciones)) persona.actuaciones = persona.actuaciones.filter(a => String(a.id) !== String(actuacionId));
+            });
+            intervencionesIndependientes = intervencionesIndependientes.filter(a => String(a.id) !== String(actuacionId));
+            await saveIDBData('id_notes', notes);
+            await saveIDBData('id_intervenciones', intervencionesIndependientes);
+            await saveToLocalFolder();
+            closeVerActuacionModal();
+            renderIntervenciones();
         }
 
         function abrirIntervencionDesdeListado(actuacionId) {
             const a = obtenerActuacionesUnicas().find(x => String(x.id) === String(actuacionId));
             if (!a) return;
+            volverAListadoIntervenciones = true;
             const implicados = Array.isArray(a.implicados) ? a.implicados : [];
             const persona = implicados.map(imp => notes.find(n => String(n.id) === String(imp.personaId))).find(Boolean);
-            if (persona) {
-                openActuacionView(persona.id, a.id);
-            } else {
-                alert('Esta intervención no tiene una ficha de persona asociada desde la que abrir el detalle.');
-            }
+            openActuacionView(persona ? persona.id : null, a.id);
         }
 
         function obtenerActuacionesUnicas() {
             const unicas = new Map();
+            (intervencionesIndependientes || []).forEach(a => {
+                const key = String(a.id || `${a.fecha}|${a.categoria}|${a.lugar}|${a.hechos}`);
+                if (!unicas.has(key)) unicas.set(key, a);
+            });
             notes.forEach(persona => (persona.actuaciones || []).forEach(a => {
                 const key = String(a.id || `${a.fecha}|${a.categoria}|${a.lugar}|${a.hechos}`);
                 if (!unicas.has(key) || (!unicas.get(key).registro && a.registro)) unicas.set(key, a);
@@ -2448,6 +2546,7 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
             });
             if (avisosCambiados) await saveIDBData('id_avisos', avisos);
             if (notasCambiadas) await saveIDBData('id_notes', notes);
+            await saveIDBData('id_intervenciones', intervencionesIndependientes); 
             if (avisosCambiados || notasCambiadas) await saveToLocalFolder();
         }
 
@@ -2614,6 +2713,7 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
 
             await saveIDBData('id_vehiculos', vehiculos);
             if (personasActualizadas) await saveIDBData('id_notes', notes);
+            await saveIDBData('id_intervenciones', intervencionesIndependientes); 
             await saveToLocalFolder();
 
             if (returnToVehicleListAfterPersonVehicleSave) {
@@ -2668,6 +2768,7 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
                 }
                 await saveIDBData('id_vehiculos', vehiculos);
                 if (personaActualizada) await saveIDBData('id_notes', notes);
+            await saveIDBData('id_intervenciones', intervencionesIndependientes); 
                 await saveToLocalFolder();
                 filterCurrentTab();
             }
@@ -2747,6 +2848,7 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
             vehiculos = [];
             avisos = [];
             await saveIDBData('id_notes', notes);
+            await saveIDBData('id_intervenciones', intervencionesIndependientes); 
             await saveIDBData('id_vehiculos', vehiculos);
             await saveIDBData('id_avisos', avisos);
             await saveToLocalFolder();
@@ -3516,10 +3618,61 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
                 (!telefono || !normalizarClavePersona(n.telefono) || normalizarClavePersona(n.telefono) === telefono)) || null;
         }
 
+        function firmaContenidoActuacion(actuacion) {
+            const a = actuacion || {};
+            return [String(a.fecha || '').trim(), normalizarClavePersona(a.categoria), normalizarClavePersona(a.lugar), normalizarClavePersona(a.hechos)].join('|');
+        }
+
+        function claveCompartidaActuacion(actuacion) {
+            const a = actuacion || {};
+            const registroOrigen = String(a.registroOrigen || a.registro || '').trim();
+            if (registroOrigen) return `INTORIG|${normalizarClavePersona(registroOrigen)}|${firmaContenidoActuacion(a)}`;
+            return `INTSIG|${firmaContenidoActuacion(a)}|${String(a.id || '')}`;
+        }
+
         function claveOrigenActuacion(actuacion, persona) {
             if (actuacion && actuacion.origenImportacionKey) return String(actuacion.origenImportacionKey);
-            const identidad = normalizarClavePersona(persona && (persona.documento || persona.nombre)) || 'persona-sin-identificar';
-            return `${identidad}|${String(actuacion && actuacion.id || '')}`;
+            return claveCompartidaActuacion(actuacion);
+        }
+
+        function buscarActuacionImportadaCoincidente(original, sourceKey) {
+            const todas = obtenerActuacionesUnicas();
+            const firma = firmaContenidoActuacion(original);
+            const registroOrigen = normalizarClavePersona(original && (original.registroOrigen || original.registro));
+            return todas.find(a => String(a.origenImportacionKey || '') === String(sourceKey)) ||
+                (registroOrigen ? todas.find(a => normalizarClavePersona(a.registroOrigen || '') === registroOrigen && firmaContenidoActuacion(a) === firma) : null);
+        }
+
+        function consolidarActuacionesImportadasDuplicadas() {
+            const grupos = new Map();
+            obtenerActuacionesUnicas().forEach(a => {
+                if (!a.origenImportacionKey && !a.registroOrigen) return;
+                const key = `${normalizarClavePersona(a.registroOrigen || a.registro)}|${firmaContenidoActuacion(a)}`;
+                if (!normalizarClavePersona(a.registroOrigen || a.registro)) return;
+                if (!grupos.has(key)) grupos.set(key, []);
+                grupos.get(key).push(a);
+            });
+            for (const lista of grupos.values()) {
+                if (lista.length < 2) continue;
+                const base = JSON.parse(JSON.stringify(lista[0]));
+                const ids = new Set(lista.map(a => String(a.id)));
+                const implicados = Array.isArray(base.implicados) ? base.implicados.slice() : [];
+                const externos = Array.isArray(base.implicadosExternos) ? base.implicadosExternos.slice() : [];
+                lista.slice(1).forEach(a => {
+                    (a.implicados || []).forEach(imp => { if (!implicados.some(x => String(x.personaId) === String(imp.personaId))) implicados.push(imp); });
+                    (a.implicadosExternos || []).forEach(imp => {
+                        const k = normalizarClavePersona(imp.documento || imp.nombre || imp.telefono);
+                        if (!externos.some(x => normalizarClavePersona(x.documento || x.nombre || x.telefono) === k)) externos.push(imp);
+                    });
+                });
+                base.implicados = implicados;
+                base.implicadosExternos = externos.filter(ext => !implicados.some(imp => {
+                    const p = notes.find(n => String(n.id) === String(imp.personaId));
+                    return p && ((normalizarClavePersona(ext.documento) && normalizarClavePersona(ext.documento) === normalizarClavePersona(p.documento)) || (normalizarClavePersona(ext.nombre) && normalizarClavePersona(ext.nombre) === normalizarClavePersona(p.nombre)));
+                }));
+                notes.forEach(persona => { if (Array.isArray(persona.actuaciones)) persona.actuaciones = persona.actuaciones.filter(a => !ids.has(String(a.id))); });
+                copiarActuacionATodasLasFichas(base);
+            }
         }
 
         async function exportSharedPerson(personId) {
@@ -3527,7 +3680,7 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
             if (!persona) { alert('No se encuentra la ficha de la persona.'); return; }
             const actuaciones = (Array.isArray(persona.actuaciones) ? persona.actuaciones : []).map(a => ({
                 ...JSON.parse(JSON.stringify(a)),
-                origenImportacionKey: claveOrigenActuacion(a, persona),
+                origenImportacionKey: claveCompartidaActuacion(a),
                 registroOrigen: a.registroOrigen || a.registro || null,
                 avisoId: null,
                 avisoRegistro: a.avisoRegistro || null,
@@ -3599,11 +3752,11 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
                         return;
                     }
                     const existente = buscarPersonaCoincidente(datosPersona);
-                    const actuacionesYaImportadas = new Set(obtenerActuacionesUnicas().map(a => a.origenImportacionKey).filter(Boolean).map(String));
-                    const nuevas = data.actuaciones.filter(a => !actuacionesYaImportadas.has(claveOrigenActuacion(a, datosPersona)));
+                    const nuevas = data.actuaciones.filter(original => !buscarActuacionImportadaCoincidente(original, claveCompartidaActuacion(original)));
+                    const coincidentes = data.actuaciones.length - nuevas.length;
                     const pregunta = existente
-                        ? `La persona ya existe en tu registro: ${existente.nombre || datosPersona.nombre}.\n\nSe añadirán ${nuevas.length} actuación(es) nueva(s) de ${data.actuaciones.length} recibida(s), sin duplicar las ya importadas. No se sobrescribirán los datos de la ficha existente. ¿Continuar?`
-                        : `Se creará una ficha para ${datosPersona.nombre || datosPersona.documento} y se añadirán ${nuevas.length} actuación(es) nueva(s) de ${data.actuaciones.length} recibida(s). No se importarán los avisos originales ni se crearán fichas completas de los demás implicados. ¿Continuar?`;
+                        ? `La persona ya existe en tu registro: ${existente.nombre || datosPersona.nombre}.\n\nSe añadirán ${nuevas.length} intervención(es) nueva(s) y se actualizarán ${coincidentes} intervención(es) que ya existan para incorporar esta persona y completar las implicaciones, sin duplicarlas. No se sobrescribirán los datos de la ficha existente. ¿Continuar?`
+                        : `Se creará una ficha para ${datosPersona.nombre || datosPersona.documento} y se añadirán ${nuevas.length} intervención(es) nueva(s); ${coincidentes} ya coinciden con intervenciones registradas y se actualizarán sin duplicarlas. No se importarán los avisos originales ni se crearán automáticamente fichas completas de los demás implicados. ¿Continuar?`;
                     if (!confirm(pregunta)) return;
 
                     let personaDestino = existente;
@@ -3619,66 +3772,81 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
                     }
 
                     let importadas = 0;
-                    let duplicadas = 0;
-                    for (const original of nuevas) {
-                        const sourceKey = claveOrigenActuacion(original, datosPersona);
-                        // Cada acción recibe un ID local y un INT- nuevo; el número de origen se conserva solo como referencia.
+                    let fusionadas = 0;
+                    for (const original of data.actuaciones) {
+                        const sourceKey = claveCompartidaActuacion(original);
+                        const existenteActuacion = buscarActuacionImportadaCoincidente(original, sourceKey);
                         const fechaAnio = String(original.fecha || '').match(/^(\d{4})/);
                         const anio = fechaAnio ? Number(fechaAnio[1]) : new Date().getFullYear();
-                        const nuevoId = Date.now().toString() + '_' + Math.random().toString(36).slice(2, 9) + '_' + importadas;
-                        const localImplicados = [];
-                        const externos = [];
                         const implicadosExportados = Array.isArray(original.implicadosExportados) ? original.implicadosExportados : [];
+                        const localImplicadosNuevos = [];
+                        const externosNuevos = [];
                         implicadosExportados.forEach(imp => {
                             const coincideCompartida = imp.esPersonaCompartida || (
                                 normalizarClavePersona(imp.documento) && normalizarClavePersona(imp.documento) === normalizarClavePersona(datosPersona.documento)
+                            ) || (
+                                normalizarClavePersona(imp.nombre) && normalizarClavePersona(imp.nombre) === normalizarClavePersona(datosPersona.nombre)
                             );
                             const local = coincideCompartida ? personaDestino : buscarPersonaCoincidente(imp);
                             if (local) {
-                                if (!localImplicados.some(x => String(x.personaId) === String(local.id))) {
-                                    localImplicados.push({ personaId: String(local.id), implicacion: imp.implicacion || 'Identificado' });
+                                if (!localImplicadosNuevos.some(x => String(x.personaId) === String(local.id))) {
+                                    localImplicadosNuevos.push({ personaId: String(local.id), implicacion: imp.implicacion || 'Identificado' });
                                 }
                             } else {
-                                externos.push({ nombre: imp.nombre || 'Persona no identificada', documento: imp.documento || '', telefono: imp.telefono || '', implicacion: imp.implicacion || 'No especificada' });
+                                const ext = { nombre: imp.nombre || 'Persona no identificada', documento: imp.documento || '', telefono: imp.telefono || '', implicacion: imp.implicacion || 'No especificada' };
+                                const k = normalizarClavePersona(ext.documento || ext.nombre || ext.telefono);
+                                if (!externosNuevos.some(x => normalizarClavePersona(x.documento || x.nombre || x.telefono) === k)) externosNuevos.push(ext);
                             }
                         });
-                        const implicacionPersona = implicadosExportados.find(imp => imp.esPersonaCompartida || (
-                            normalizarClavePersona(imp.documento) && normalizarClavePersona(imp.documento) === normalizarClavePersona(datosPersona.documento)
-                        ));
-                        if (!localImplicados.some(x => String(x.personaId) === String(personaDestino.id))) {
-                            localImplicados.unshift({ personaId: String(personaDestino.id), implicacion: implicacionPersona ? (implicacionPersona.implicacion || 'Identificado') : 'Identificado' });
+                        if (!localImplicadosNuevos.some(x => String(x.personaId) === String(personaDestino.id))) {
+                            const implicacionPersona = implicadosExportados.find(imp => imp.esPersonaCompartida || (normalizarClavePersona(imp.documento) && normalizarClavePersona(imp.documento) === normalizarClavePersona(datosPersona.documento)) || (normalizarClavePersona(imp.nombre) && normalizarClavePersona(imp.nombre) === normalizarClavePersona(datosPersona.nombre)));
+                            localImplicadosNuevos.unshift({ personaId: String(personaDestino.id), implicacion: implicacionPersona ? (implicacionPersona.implicacion || 'Identificado') : 'Identificado' });
                         }
-                        const actuacion = {
-                            id: nuevoId,
-                            categoria: original.categoria || 'otro',
-                            fecha: original.fecha || '',
-                            lugar: original.lugar || '',
-                            hechos: original.hechos || '',
-                            registro: siguienteRegistro('INT', anio),
-                            registroOrigen: original.registroOrigen || original.registro || null,
-                            origenImportacionKey: sourceKey,
-                            avisoId: null,
-                            avisoRegistro: original.avisoRegistro || null,
-                            implicados: localImplicados,
-                            implicadosExternos: externos
-                        };
-                        // Mantener el mismo ID/registro local en el historial de cada implicado que ya exista en esta base.
-                        localImplicados.forEach(imp => {
-                            const personaLocal = notes.find(n => String(n.id) === String(imp.personaId));
-                            if (!personaLocal) return;
-                            if (!Array.isArray(personaLocal.actuaciones)) personaLocal.actuaciones = [];
-                            const yaExiste = personaLocal.actuaciones.some(a => a.origenImportacionKey && String(a.origenImportacionKey) === sourceKey);
-                            if (!yaExiste) personaLocal.actuaciones.unshift(JSON.parse(JSON.stringify(actuacion)));
-                            else duplicadas++;
-                        });
-                        importadas++;
-                    }
 
+                        let actuacion;
+                        if (existenteActuacion) {
+                            actuacion = JSON.parse(JSON.stringify(existenteActuacion));
+                            const implicadosActuales = Array.isArray(actuacion.implicados) ? actuacion.implicados.slice() : [];
+                            localImplicadosNuevos.forEach(imp => {
+                                const ya = implicadosActuales.find(x => String(x.personaId) === String(imp.personaId));
+                                if (!ya) implicadosActuales.push(imp);
+                            });
+                            actuacion.implicados = implicadosActuales;
+                            const externosActuales = Array.isArray(actuacion.implicadosExternos) ? actuacion.implicadosExternos.slice() : [];
+                            externosNuevos.forEach(ext => {
+                                const k = normalizarClavePersona(ext.documento || ext.nombre || ext.telefono);
+                                const yaEsLocal = implicadosActuales.some(imp => {
+                                    const p = notes.find(n => String(n.id) === String(imp.personaId));
+                                    return p && ((normalizarClavePersona(ext.documento) && normalizarClavePersona(ext.documento) === normalizarClavePersona(p.documento)) || (normalizarClavePersona(ext.nombre) && normalizarClavePersona(ext.nombre) === normalizarClavePersona(p.nombre)));
+                                });
+                                if (!yaEsLocal && !externosActuales.some(x => normalizarClavePersona(x.documento || x.nombre || x.telefono) === k)) externosActuales.push(ext);
+                            });
+                            actuacion.implicadosExternos = externosActuales.filter(ext => !implicadosActuales.some(imp => {
+                                const p = notes.find(n => String(n.id) === String(imp.personaId));
+                                return p && ((normalizarClavePersona(ext.documento) && normalizarClavePersona(ext.documento) === normalizarClavePersona(p.documento)) || (normalizarClavePersona(ext.nombre) && normalizarClavePersona(ext.nombre) === normalizarClavePersona(p.nombre)));
+                            }));
+                            if (!actuacion.origenImportacionKey) actuacion.origenImportacionKey = sourceKey;
+                            if (!actuacion.registroOrigen) actuacion.registroOrigen = original.registroOrigen || original.registro || null;
+                            fusionadas++;
+                        } else {
+                            actuacion = {
+                                id: Date.now().toString() + '_' + Math.random().toString(36).slice(2, 9) + '_' + importadas,
+                                categoria: original.categoria || 'otro', fecha: original.fecha || '', lugar: original.lugar || '', hechos: original.hechos || '',
+                                registro: siguienteRegistro('INT', anio), registroOrigen: original.registroOrigen || original.registro || null,
+                                origenImportacionKey: sourceKey, avisoId: null, avisoRegistro: original.avisoRegistro || null,
+                                implicados: localImplicadosNuevos, implicadosExternos: externosNuevos
+                            };
+                            importadas++;
+                        }
+                        copiarActuacionATodasLasFichas(actuacion);
+                    }
+                    consolidarActuacionesImportadasDuplicadas();
                     await saveIDBData('id_notes', notes);
+            await saveIDBData('id_intervenciones', intervencionesIndependientes); 
                     await saveToLocalFolder();
                     input.value = '';
                     filterCurrentTab();
-                    alert(`✅ Importación completada.\nPersona: ${personaDestino.nombre || personaDestino.documento}\nActuaciones nuevas: ${importadas}\nReferencias repetidas omitidas: ${data.actuaciones.length - nuevas.length}`);
+                    alert(`✅ Importación completada.\nPersona: ${personaDestino.nombre || personaDestino.documento}\nIntervenciones nuevas: ${importadas}\nIntervenciones fusionadas/actualizadas: ${fusionadas}\nNo se han creado duplicados de las intervenciones coincidentes.`);
                     viewPersonDetail(personaDestino.id);
                 } catch (err) {
                     console.error('Error importando ficha compartida:', err);
@@ -3692,7 +3860,7 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
 
         /* BACKUP JSON */
         async function exportBackup() {
-            const fullData = { notes: notes, vehiculos: vehiculos, avisos: avisos };
+            const fullData = { notes: notes, vehiculos: vehiculos, avisos: avisos, intervencionesIndependientes: intervencionesIndependientes };
             const fileName = `filiame_copia_seguridad_${new Date().toISOString().slice(0,10)}.json`;
             const json = JSON.stringify(fullData, null, 2);
 
@@ -3749,13 +3917,16 @@ Implicación: ${imp.implicacion || 'No especificada'}`);
                     const importedData = JSON.parse(e.target.result);
                     if (Array.isArray(importedData)) {
                         notes = importedData;
+                        intervencionesIndependientes = [];
                     } else {
                         notes = importedData.notes || [];
                         vehiculos = importedData.vehiculos || [];
                         avisos = importedData.avisos || [];
+                        intervencionesIndependientes = importedData.intervencionesIndependientes || [];
                     }
 
                     await saveIDBData('id_notes', notes);
+            await saveIDBData('id_intervenciones', intervencionesIndependientes); 
                     await saveIDBData('id_vehiculos', vehiculos);
                     await saveIDBData('id_avisos', avisos);
                     await saveToLocalFolder();
